@@ -209,12 +209,15 @@ start_environment()
     mount_optional sdcard --bind /sdcard
 
     # Mounts the /debdroid/bin directory (required, as it contains debinit)
+    # NOTE: /debdroid stays visible in the chroot, so a 700 umask would hide the libraries from non-root users
     mkdir -p "$DEBDROIDMGR_ENV"/debdroid/bin
+    chmod 755 "$DEBDROIDMGR_ENV"/debdroid
     [ "$CONFIG_DEBDROID_BIN" = "yes" ] && mount_required debdroid/bin --bind "$DEBDROIDMGR_BIN"
 
     # Mounts and preloads libs in the /debdroid/lib directory
     mkdir -p "$DEBDROIDMGR_ENV"/debdroid/lib
     true > "$DEBDROIDMGR_ENV"/etc/ld.so.preload
+    chmod 644 "$DEBDROIDMGR_ENV"/etc/ld.so.preload
     if [ "$CONFIG_DEBDROID_LIB" = "yes" ]; then
         mount_optional debdroid/lib --bind "$DEBDROIDMGR_LIB"
 
@@ -231,6 +234,7 @@ start_environment()
 
     # Creates the /etc/resolv.conf file
     true > "$DEBDROIDMGR_ENV"/etc/resolv.conf
+    chmod 644 "$DEBDROIDMGR_ENV"/etc/resolv.conf
     for server in 1 2 3 4; do
         [ -z "$(getprop net.dns$server)" ] && break
         echo "nameserver $(getprop net.dns$server)" >> "$DEBDROIDMGR_ENV"/etc/resolv.conf
@@ -244,6 +248,7 @@ start_environment()
 
     # Creates the /etc/hosts file
     true > "$DEBDROIDMGR_ENV"/etc/hosts
+    chmod 644 "$DEBDROIDMGR_ENV"/etc/hosts
     echo "127.0.0.1     localhost $($BUSYBOX hostname)" >> "$DEBDROIDMGR_ENV"/etc/hosts
     echo "::1           localhost ip6-localhost ip6-loopback" >> "$DEBDROIDMGR_ENV"/etc/hosts
 }
@@ -375,7 +380,8 @@ else
     start_environment
 
     # Spawns a clean login session without inheriting env variables
+    # NOTE: Resets the umask, as Android root shells often use 077, which makes new files private
     step "Running chroot command: \"$DEBDROIDMGR_EXEC\""
     echo
-    $BUSYBOX chroot "$DEBDROIDMGR_ENV" /bin/su - -c "sh /debdroid/bin/debinit && $DEBDROIDMGR_EXEC"
+    $BUSYBOX chroot "$DEBDROIDMGR_ENV" /bin/su - -c "umask 022 && sh /debdroid/bin/debinit && $DEBDROIDMGR_EXEC"
 fi

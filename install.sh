@@ -66,6 +66,10 @@ for lib in "$DEBDROID_HOME"/lib/*; do
 done
 chown -R root:root "$DEBDROID_HOME"/lib
 
+# Makes the directories traversable, so non-root chroot users can load preloaded libraries
+# NOTE: Android root shells often run with umask 077, which makes mkdir and cp create 700 folders
+chmod 755 "$DEBDROID_HOME" "$DEBDROID_HOME"/bin "$DEBDROID_HOME"/lib "$DEBDROID_HOME"/mnt
+
 # Creates the skeleton under /sdcard
 step "Populating $DEBDROID_SDHOME"
 mkdir -p "$DEBDROID_SDHOME" \
