@@ -14,11 +14,12 @@ For DebDroid v1.2:
 - [X] Update README:
   - Offload large sections into `docs`.
   - Document and mention the container runtime.
-- [ ] Categorize failures into warnings and errors in `debdroid_mgr.sh`.
-- [ ] Reorganize and refactor preload libraries:
+- [X] Categorize failures into warnings and errors in `debdroid_mgr.sh`.
+- [ ] ~~Reorganize and refactor preload libraries:
   - Implement linker fix in `libexec.so`.
-  - Move syscall logic from `librandom.so` and link into `libsyscall.so`.
-- [ ] Implement DebDroid PID loggers and locks for more robust checks.
+  - Move syscall logic from `librandom.so` and link into `libsyscall.so`.~~
+- [X] Implement DebDroid PID loggers and locks for more robust checks.
+- [ ] Implement DebDroid background mode. (start, stop, attach)
 - [ ] Implement a smart configuration system for `debdroid_mgr.sh`
 - [ ] Update docs:
   - Add x11 xfce4 vnc guide.

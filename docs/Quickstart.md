@@ -5,7 +5,8 @@
 To display DebDroid's help page, run:
 
 ```bash
-/sdcard/debdroid/debdroid.sh help
+su
+sh /sdcard/debdroid/debdroid.sh help
 ```
 
 ```txt
@@ -47,6 +48,11 @@ This launches the environment and gives you a shell inside Debian.
 
 Inside the chroot shell, users can execute the `exit` command to leave the environment and automatically unmount the filesystems.
 
+> [!NOTE]
+> Leaving the environment also stops every program still running inside it, including background services (e.g. `sshd`, VNC servers). Keep the session open for as long as they need to run.
+
+Only one session can run at a time. Starting a second one fails with `The environment is already in use`.
+
 ## Running Commands
 
 You can run a specific command inside the chroot without starting an interactive shell. DebDroid provides pre-made command scripts located in `/sdcard/debdroid/command`, which automate common tasks such as maintenance, setup, or service management.
@@ -83,7 +89,7 @@ This will execute the `apt update` command directly in the chroot environment.
 
 The Debian root filesystem (debian.img) in DebDroid has a fixed size. If you need more space, you can easily expand it using the built-in resize helper.
 
-The following command expands the debian environment to 5GB:
+The following command resizes the debian environment to 5 GiB:
 
 ```bash
 su
@@ -97,7 +103,9 @@ su
 sh /sdcard/debdroid/debdroid.sh resize
 ```
 
-- Make sure the image is **not mounted** when resizing.
+- Sizes are an integer followed by a unit: `K`, `M` or `G` (powers of 1024), e.g. `512M` or `5G`.
+- Exit the environment before resizing, the resizer refuses to run while it is in use.
+- Shrinking keeps your data, but fails if the data does not fit in the new size.
 - Ensure you have **enough free storage** on your device to accommodate the new image size.
 
 ## User Networking

@@ -1,7 +1,7 @@
 # DebDroid - Debian On Android
 
 > [!IMPORTANT]
-> Previous versions (v1.0 and v1.1) contain critical security bugs and missing functionality. Users are strongly encouraged to update DebDroid to the latest version (v1.2). The update does not interfere with existing DebDroid setups.
+> Previous versions (v1.0 and v1.1) contain critical security bugs and missing functionality. Users are strongly encouraged to update DebDroid to the latest version (v1.2). The update keeps your existing debian image, see the [installation guide](docs/Install.md) for details.
 
 DebDroid repurposes your old, unused Android devices into compact Debian workstations. It offers a lightweight sandboxed Linux environment suitable for many workloads traditionally assigned to Raspberry Pi and other single-board computers. Since it runs on top of native Android, you get a full Debian userspace without requiring additional hardware or a dedicated Linux installation, making it an attractive, plug-and-play solution for developers and sysadmins who need a portable, low-maintenance server on hand.
 

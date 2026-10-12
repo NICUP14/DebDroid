@@ -1,13 +1,18 @@
 #!/system/bin/sh
 
-# Checks for a matching debdroid configuration file
-if [ ! -f /sdcard/debdroid/debdroid_env.sh ]; then
-    echo "$0: Missing required configuration file: /sdcard/debdroid/debdroid_env.sh"
-    exit 1
-fi
+# Checks for the required debdroid files
+for file in debdroid_env.sh debdroid_ui.sh; do
+    if [ ! -f /sdcard/debdroid/"$file" ]; then
+        echo "Error: Missing required file: /sdcard/debdroid/$file" >&2
+        exit 1
+    fi
+done
 
 # shellcheck disable=SC1091
 . /sdcard/debdroid/debdroid_env.sh
+# shellcheck disable=SC1091
+. /sdcard/debdroid/debdroid_ui.sh
+setup_colors
 
 # Prints HELP Usage
 if [ $# -eq 0 ]; then
@@ -24,12 +29,10 @@ Usage:
 Arguments:
   SIZE        
        New target size for the image.
-       If shrinking, extra data is lost. If extending, the new space reads as zeros.
+       Shrinking fails if the existing data does not fit in the new size.
 
 Size Format:
-  - Integer followed by optional unit.
-  - Units: K, M, G (powers of 1024), KB, MB, GB (powers of 1000)
-  - Binary prefixes supported: KiB=K, MiB=M, GiB=G
+  - Integer followed by a unit: K, M, G (powers of 1024)
   Examples: 512M, 5G, 10G
 
 Notes:
@@ -37,19 +40,20 @@ Notes:
 
 Examples:
   $0 5G    # Extend image to 5 GiB"
+exit
 fi
 
 # Checks for a matching architecture
 ARCH=$(getprop ro.product.cpu.abi)
 if [ "$ARCH" != "arm64-v8a" ]; then
-    echo "$0: Unsupported architecture: $ARCH."
-    echo "This script only works on arm64-v8a. (aarch64)"
+    error "Unsupported architecture: \"$ARCH\"" \
+        "This script only works on arm64-v8a (aarch64)."
     exit 1
 fi
 
 # Check if the user has root permissions 
 if [ "$(id -u)" -ne 0 ]; then
-    echo "$0: Missing required super-user permissions."
+    error "Missing required super-user permissions."
     exit 1
 fi
 
@@ -57,20 +61,54 @@ fi
 DEBDROIDRSZ_SIZE="$@"
 
 # Checks for a valid size
-if ! echo "$DEBDROIDRSZ_SIZE" | grep -Eq '^[0-9]+([KMG]?B?)?$'; then
-    echo "$0: Invalid size: $DEBDROIDRSZ_SIZE"
+if ! echo "$DEBDROIDRSZ_SIZE" | $BUSYBOX grep -Eq '^[0-9]+[KMG]$'; then
+    error "Invalid size: \"$DEBDROIDRSZ_SIZE\"" \
+        "Expected an integer followed by K, M or G (e.g. 5G)."
     exit 1
 fi
 
-# Ensures the image is not mounted
-if $BUSYBOX mountpoint -q "$DEBDROID_ENV"; then
-    echo "$0: Refusing to resize a mounted image."
-    echo "Terminate all running instances before resizing the image."
-    exit 1
-fi
+# Resizes the debian image, expects the lock file to be open as fd 9
+resize_image()
+{
+    # Ensures the image is not mounted
+    # NOTE: Mounts live in a private namespace, so the lock is the only reliable check
+    if ! $BUSYBOX flock -n 9; then
+        error "Refusing to resize the debian image while the environment is running." \
+            "Exit all running instances before resizing the image."
+        return 1
+    fi
 
-echo "Resizing $DEBDROID_IMG to $DEBDROIDRSZ_SIZE..."
-($BUSYBOX truncate -s "$DEBDROIDRSZ_SIZE" "$DEBDROID_IMG" && \
-    "$DEBDROID_BIN"/e2fsck -fp "$DEBDROID_IMG" && \
-    "$DEBDROID_BIN"/resize2fs "$DEBDROID_IMG" && \
-    echo "Done!") || echo "Fail!"
+    section "Resizing the debian image to $DEBDROIDRSZ_SIZE"
+
+    step "Checking the debian image"
+    fsck_output=$("$DEBDROID_BIN"/e2fsck -fp "$DEBDROID_IMG" 2>&1)
+    fsck_status=$?
+
+    # Exit codes 1 and 2 mean that errors were found and corrected
+    if [ "$fsck_status" -ge 4 ]; then
+        error "Failed to repair the debian image." "$fsck_output" \
+            "Repair it manually: \"$DEBDROID_BIN/e2fsck -f $DEBDROID_IMG\""
+        return 1
+    elif [ "$fsck_status" -ne 0 ]; then
+        warn "Repaired errors in the debian image." "$fsck_output"
+    fi
+
+    # NOTE: resize2fs extends the image file when growing, truncate trims it when shrinking
+    step "Resizing the filesystem"
+    if ! resize_output=$("$DEBDROID_BIN"/resize2fs "$DEBDROID_IMG" "$DEBDROIDRSZ_SIZE" 2>&1); then
+        error "Failed to resize the debian image." "$resize_output"
+        return 1
+    fi
+
+    step "Resizing the image file"
+    if ! truncate_output=$($BUSYBOX truncate -s "$DEBDROIDRSZ_SIZE" "$DEBDROID_IMG" 2>&1); then
+        error "Failed to resize the image file." "$truncate_output"
+        return 1
+    fi
+
+    step "Successfully resized the debian image"
+}
+
+# NOTE: Opens the lock with a per-command redirection, as POSIX leaves it unspecified
+# whether fds opened by a bare "exec" reach other programs (i.e. flock)
+resize_image 9> "$DEBDROID_LOCK"

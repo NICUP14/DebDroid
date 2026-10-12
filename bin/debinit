@@ -4,7 +4,7 @@
 
 # Check if the user has root permissions 
 if [ "$(id -u)" -ne 0 ]; then
-    echo "$0: Missing required super-user permisions."
+    echo "$0: Missing required super-user permissions."
     exit 1
 fi
 
@@ -40,6 +40,6 @@ if command -v dbus-daemon >/dev/null 2>&1; then
     rm -f /run/dbus/pid
     dbus-daemon --system --fork
 else
-    echo "$0: Failed to start system DBus."
-    echo "Install the \"dbus-x11\" and re-launch the environment"
+    echo "$0: Failed to start the system DBus, dbus-daemon is not installed."
+    echo "Install the \"dbus-x11\" package and restart the environment."
 fi

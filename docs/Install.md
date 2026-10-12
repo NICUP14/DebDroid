@@ -1,7 +1,8 @@
 # Installation Guide
 
 > [!NOTE]
-> Once installed, DebDroid can be safely updated by simply re-running the install script.It performs the necessary script and package updates packages without overwriting the existing image.
+> Once installed, DebDroid can be safely updated by simply re-running the install script. It updates the scripts, binaries and libraries without overwriting the existing image.
+> Back up `/sdcard/debdroid/environment` and `/sdcard/debdroid/debdroid_env.sh` before updating if you have customized them, as they are overwritten.
 
 This guide is written for novice users. You only need basic knowledge of Android, like installing apps from unknown sources, extracting an archive, and a little experience using a terminal (command line).
 
@@ -52,5 +53,7 @@ The script will automatically install DebDroid files in:
 
 - `/data/local/debdroid`
 - `/sdcard/debdroid`
+
+On a fresh install, the script asks for the size of the debian image (e.g. `5G`). Press Enter to keep the default size, it can be changed later with the [resizer](Quickstart.md#image-resizing).
 
 After that, DebDroid is ready to use!
