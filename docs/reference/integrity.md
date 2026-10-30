@@ -24,14 +24,44 @@ than a failed one.
 ## Where the checksums come from
 
 The trust anchor is this git repository, not the download server. Checksums
-live in [provenance/manifest](../../provenance/manifest), travel with the
-scripts, and are reviewable in the commit history.
+live in [provenance/manifest](../../provenance/manifest) and
+[rootfs/manifest](../../rootfs/manifest), travel with the scripts, and are
+reviewable in the commit history.
 
 The rule that follows is the important one:
 
-> **A payload's checksum is never fetched from the same place as the payload.**
-> A checksum served next to the file it describes proves nothing, because
-> whoever changed one could change the other.
+> **A payload's checksum is never *only* fetched from the same place as the
+> payload.** A checksum served next to the file it describes cannot establish
+> that the file was not tampered with, because whoever changed one could change
+> the other.
+
+### Mirror checksums are still used
+
+Most mirrors do publish a checksum beside the artifact, and DebDroid fetches it
+where an entry records one. It is not redundant — it does a different job:
+
+| Source | Catches |
+| --- | --- |
+| The manifest here | A tampered or substituted artifact |
+| The mirror's checksum file | A corrupted or truncated download |
+
+A disagreement between the two is reported loudly rather than resolved
+silently, because it means either the mirror changed the artifact or this
+manifest has gone stale.
+
+### Where a mirror's checksums are better than ours
+
+Debian's are **signed**. The `InRelease` file is signed by the Debian archive
+keyring and transitively covers the package hashes, which anchors it in a key
+rather than in the transport.
+
+That is a stronger guarantee than this repository offers, since anyone with
+push access here could rewrite a checksum. `rootfs/build.sh` already benefits,
+because `debootstrap` verifies against the signed release while building — but
+that happens on a maintainer's machine, and what reaches the device afterwards
+is a tarball covered only by a checksum recorded here.
+
+Carrying a signature all the way to the device is the open gap described below.
 
 ## Why HTTP fallback is not a hole
 
@@ -56,11 +86,43 @@ can change the expected hashes along with the files they describe. Verification
 proves a download matches what the repository says it should be; it does not
 prove the repository itself was not tampered with.
 
-Closing that gap needs a signature verifier on the device, and busybox does not
-include one. The plan is to build a small static `signify` or `minisign` from
-source, pin its public key in the installed tree, and have the updater check a
-signed release manifest whose checksums then cover each payload — a signature
-at the root, hashes underneath.
+This is the one place where upstream does better than DebDroid: Debian's
+release files are GPG-signed, so their chain is rooted in a key. DebDroid's is
+rooted in a git history, which is weaker.
+
+Closing it means signing DebDroid's own releases and pinning the public key in
+the installed tree. That is a small piece of work, not a distant one: `signify`
+and `minisign` are a few hundred lines of Ed25519 verification and cross-compile
+statically with the same NDK pipeline that already builds e2fsprogs. It is
+tracked for v1.3, and `tools/sign-release.sh` plus `verify_signature` in
+`debdroid_lib.sh` are the scaffolding, waiting on a published key.
+
+### Why Debian's own key does not cover the tarball
+
+It would be reasonable to ask why DebDroid does not simply verify Debian's
+signature on the device instead of minting its own key. The answer is that
+there is nothing of Debian's to verify at that point.
+
+Debian signs the **archive**: `InRelease` is signed by the archive keyring and
+covers the package indices, which in turn cover the `.deb` files. It does not
+sign rootfs tarballs, because a rootfs tarball is not one of Debian's
+artifacts — it is one of ours, assembled from theirs.
+
+That signature chain is still doing real work, just earlier:
+`rootfs/build.sh` runs `debootstrap`, which verifies the archive signature
+while fetching every package. So the contents are verified against Debian's key
+at build time, on a maintainer's machine. What ships afterwards is a file this
+project produced, and only this project can vouch for it.
+
+Verifying the Debian archive **on the device** would only matter for running
+`debootstrap` there, which would need `gpgv` and libgcrypt — `gpgv` being the
+verify-only binary `apt` and `debootstrap` themselves use. That is a much larger
+dependency than an Ed25519 verifier, and it buys nothing for the current design,
+where the device installs a tarball rather than bootstrapping from the archive.
+
+Once the rootfs is installed, `apt` inside debian verifies against Debian's keys
+normally, with no help from DebDroid. The gap is confined to the initial
+tarball and to DebDroid's own release files.
 
 **Until that ships, the honest summary is:** downloads are protected against
 tampering in transit and against a compromised mirror, but not against a

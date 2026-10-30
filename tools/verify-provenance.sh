@@ -110,6 +110,89 @@ for file in bin/* lib/* apk/*; do
 done
 
 echo
+echo ":: Verifying the debian image"
+
+# NOTE: The image is the largest thing shipped and becomes the root filesystem,
+#       so it is checked here rather than in the test suite: hashing a gigabyte
+#       takes seconds, which is worth paying at a release gate and not on every
+#       test run.
+IMAGE_MANIFEST=rootfs/manifest
+
+if [ ! -f "$IMAGE_MANIFEST" ]; then
+    echo "  skip  no rootfs manifest"
+elif [ ! -f img/debian.img ] && [ ! -f img/debian.img.part-aa ]; then
+    echo "  skip  the image is not in the repository"
+else
+    # Reads the arm64 IMAGE record, trimming the hand-edited whitespace
+    record=$(awk -F '|' '
+        /^[ \t]*#/ { next }
+        NF < 6 { next }
+        {
+            kind = $2; arch = $3
+            gsub(/^[ \t]+|[ \t]+$/, "", kind)
+            gsub(/^[ \t]+|[ \t]+$/, "", arch)
+            if (kind == "IMAGE" && arch == "arm64") { print; exit }
+        }
+    ' "$IMAGE_MANIFEST")
+
+    if [ -z "$record" ]; then
+        fail "rootfs/manifest" "no IMAGE entry for arm64, but an image ships"
+    else
+        want_sha=$(echo "$record" | awk -F '|' '{ gsub(/[ \t]/, "", $5); print $5 }')
+        want_size=$(echo "$record" | awk -F '|' '{ gsub(/[ \t]/, "", $6); print $6 }')
+
+        if [ -f img/debian.img ]; then
+            got_sha=$(sha256sum img/debian.img | cut -d ' ' -f 1)
+            got_size=$(wc -c < img/debian.img | tr -d ' ')
+        else
+            got_sha=$(cat img/debian.img.part-* | sha256sum | cut -d ' ' -f 1)
+            got_size=$(cat img/debian.img.part-* | wc -c | tr -d ' ')
+        fi
+
+        if [ "$got_size" != "$want_size" ]; then
+            fail "img/debian.img" "size mismatch" \
+                "recorded: $want_size" "actual:   $got_size"
+        elif [ "$got_sha" != "$want_sha" ]; then
+            fail "img/debian.img" "checksum mismatch" \
+                "recorded: $want_sha" "actual:   $got_sha" \
+                "refresh the manifest after changing the image"
+        else
+            echo "  ok  img/debian.img ($want_size bytes)"
+        fi
+
+        # The feature set is what decides whether an old kernel can mount it
+        if command -v dumpe2fs > /dev/null 2>&1; then
+            [ -f img/debian.img ] && target=img/debian.img || target=
+            if [ -z "$target" ]; then
+                cat img/debian.img.part-* > /tmp/debdroid-verify.img
+                target=/tmp/debdroid-verify.img
+            fi
+
+            features=$(dumpe2fs -h "$target" 2>/dev/null |
+                sed -n 's/^Filesystem features: *//p')
+
+            case "$features" in
+                *has_journal*|*metadata_csum*|*64bit*|*orphan_file*)
+                    fail "img/debian.img" \
+                        "carries a feature old kernels reject" \
+                        "features: $features"
+                    ;;
+                '')
+                    fail "img/debian.img" "could not be read as ext2"
+                    ;;
+                *)
+                    echo "  ok  img/debian.img features: $features"
+                    ;;
+            esac
+
+            rm -f /tmp/debdroid-verify.img
+        else
+            echo "  skip  dumpe2fs is unavailable, feature set unchecked"
+        fi
+    fi
+fi
+
+echo
 if [ "$failed" -eq 0 ]; then
     echo "provenance: $checked file(s) verified, no undocumented binaries"
     exit 0

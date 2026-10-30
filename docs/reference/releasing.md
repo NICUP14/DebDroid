@@ -60,11 +60,35 @@ cannot be forgotten.
 9. **Publish the release** with the module zip, its checksum, and the changelog
    section as the release notes.
 
+## Refreshing the debian image
+
+The image is prebuilt and published as a release asset, so users install
+something ready rather than assembling a filesystem. That only works if it is
+kept current: a stale image means every new user's first `apt upgrade` is
+enormous.
+
+```sh
+sudo sh tools/refresh-image.sh --parts
+```
+
+It mounts the image, runs the upgrade inside it, cleans the caches and logs,
+and prints the manifest line to paste into `rootfs/manifest`.
+
+Monthly is plenty; after a Debian point release is better. The tool **never
+reformats** the image: its feature set is the old-kernel-safe one that a modern
+`mke2fs` would not reproduce, so it updates in place and aborts if the features
+drifted.
+
+The release workflow re-checks that independently before publishing, since an
+image carrying `has_journal`, `metadata_csum` or `64bit` would not mount on the
+kernels this project exists for.
+
 ## What must be true before tagging
 
 - `make all` passes.
 - The device suite passes on at least one real device, with `--session`.
 - `provenance/manifest` records every binary, with current checksums.
+- `rootfs/manifest` matches the image actually shipped; `make test` checks this.
 - No APK is committed, and no `unshare`/`nsenter` flag other than `--mount`.
   CI enforces both.
 

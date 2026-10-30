@@ -1,9 +1,14 @@
 #!/bin/sh
 # build.sh: Builds a debian rootfs tarball for DebDroid
 #
-# Run on a Linux machine as root, not on a device. Building the tarballs here
-# rather than linking someone else's is what makes the manifest trustworthy:
-# the checksums describe something reproducible from a recorded recipe.
+# MAINTAINER TOOL. Users never run this. It runs on a Linux desktop as root and
+# produces the tarballs that get published to the releases page; a device then
+# downloads and verifies one automatically during installation.
+#
+# Building the tarballs here rather than linking someone else's is what makes
+# the manifest trustworthy: the checksums describe something reproducible from a
+# recorded recipe, and debootstrap verifies every package against debian's
+# signed archive while assembling it.
 #
 # Usage: sudo sh rootfs/build.sh [release] [arch]
 #        sudo sh rootfs/build.sh bookworm arm64

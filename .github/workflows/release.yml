@@ -1,0 +1,107 @@
+name: Release
+
+# Publishes the release assets a user actually installs: the flashable module
+# and the prebuilt debian image, each with its checksum.
+#
+# Publishing the image here rather than only carrying it in git is what lets a
+# device fetch it on demand, so the repository download stops being hundreds of
+# megabytes for people who only want the scripts.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish (must already exist)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tooling
+        run: sudo apt-get update && sudo apt-get install -y zip e2fsprogs
+
+      # Everything that gates a release, before anything is published
+      - name: Run the full check suite
+        run: make all
+
+      - name: Read the version
+        id: version
+        run: |
+          version=$(sed -n "s/^export DEBDROID_VER='\(.*\)'$/\1/p" debdroid/debdroid_env.sh)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Publishing v$version"
+
+      - name: Build the module zip
+        run: sh module/build.sh out/DebDroid-module.zip
+
+      # The image ships as one file rather than the split parts, as a release
+      # asset has no size limit worth worrying about
+      - name: Assemble the debian image
+        run: |
+          mkdir -p out
+          if [ -f img/debian.img ]; then
+              cp img/debian.img out/debian.img
+          elif [ -f img/debian.img.part-aa ]; then
+              cat img/debian.img.part-* > out/debian.img
+          else
+              echo "::error::No image found under img/"
+              exit 1
+          fi
+
+      # An image whose features drifted would not mount on the old kernels this
+      # project exists to support, so it is checked before being published
+      - name: Verify the image is old-kernel-safe
+        run: |
+          features=$(dumpe2fs -h out/debian.img 2>/dev/null |
+              sed -n 's/^Filesystem features: *//p')
+          echo "features: $features"
+
+          case "$features" in
+              *has_journal*|*metadata_csum*|*64bit*|*orphan_file*)
+                  echo "::error::The image carries features old kernels reject."
+                  exit 1
+                  ;;
+          esac
+
+          if ! dumpe2fs -h out/debian.img 2>/dev/null | grep -q 'ext2\|Filesystem features'; then
+              echo "::error::Could not read the image as an ext2 filesystem."
+              exit 1
+          fi
+          echo "ok: the image is old-kernel-safe"
+
+      - name: Compress the image
+        run: |
+          gzip -9 -c out/debian.img > out/debian.img.gz
+          rm out/debian.img
+          ls -la out/
+
+      - name: Checksum every asset
+        run: |
+          cd out
+          sha256sum DebDroid-module.zip debian.img.gz > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          gh release create "$TAG" \
+              --title "DebDroid $TAG" \
+              --notes-file CHANGELOG.md \
+              out/DebDroid-module.zip \
+              out/debian.img.gz \
+              out/SHA256SUMS \
+          || gh release upload "$TAG" --clobber \
+              out/DebDroid-module.zip \
+              out/debian.img.gz \
+              out/SHA256SUMS

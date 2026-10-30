@@ -12,6 +12,13 @@
 # kernels refuse to mount. An IMAGE entry must additionally record its
 # filesystem and feature flags.
 #
+# Most mirrors publish a checksum file beside the artifact. That is worth
+# fetching and comparing, but it does a different job from the checksum here:
+# it catches a corrupted or truncated download, not a tampered one, since
+# whoever could alter the tarball on a mirror could alter the file next to it.
+# A disagreement between the two is reported loudly, because it means either
+# the mirror changed the artifact or this manifest has gone stale.
+#
 # Format, one record per line, fields separated by "|":
 #   id | kind | arch | release | sha256 | size | url [ | mirror-url ... ]
 #
@@ -19,9 +26,22 @@
 #   arch     the debian architecture, matching check_arch
 #   size     uncompressed bytes, used to pick a sensible default image size
 #
+# An entry may add a "sha256url=" field naming the mirror's own checksum file,
+# which is then cross-checked against the sha256 recorded above.
+#
 # Checksums below are placeholders until the tarballs are built and published;
 # the bootstrap refuses any entry whose checksum does not verify, so an
 # unfilled entry fails closed rather than installing something unverified.
+
+# The image currently shipped in git, assembled from img/debian.img.part-*.
+# Its feature set is the old-kernel-safe one and must stay that way: no
+# has_journal, no metadata_csum, no 64bit. Verify after any change with
+# "dumpe2fs -h" and compare against the features recorded here.
+#
+# NOTE: Built 2025-09-02. A stale image means every new user's first
+#       "apt upgrade" is enormous, which is what tools/refresh-image.sh exists
+#       to prevent. Refresh it and update this line.
+default-arm64 | IMAGE | arm64 | bookworm | 536d8333dfc2edd927f2e2ebcd356cef1dcde79ff666c8060964e9feb0491ff1 | 1073741824 | git:img/debian.img.part-* | features=ext_attr,resize_inode,dir_index,filetype,sparse_super,large_file | built=2025-09-02
 
 # bookworm-arm64 | TARBALL | arm64 | bookworm | PLACEHOLDER | 0 | https://github.com/NICUP14/DebDroid/releases/download/rootfs-bookworm/debian-bookworm-arm64.tar.gz
 # bookworm-armhf | TARBALL | armhf | bookworm | PLACEHOLDER | 0 | https://github.com/NICUP14/DebDroid/releases/download/rootfs-bookworm/debian-bookworm-armhf.tar.gz

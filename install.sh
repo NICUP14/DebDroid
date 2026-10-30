@@ -98,6 +98,12 @@ if [ -d ./tests ]; then
     cp ./tests/assert.sh ./tests/device.sh ./tests/device_probe.sh "$DEBDROID_SDHOME"/tests
 fi
 
+# Installs the rootfs manifest, which carries the checksums the image is
+# verified against, so verification does not depend on the download server
+if [ -f ./rootfs/manifest ]; then
+    cp ./rootfs/manifest "$DEBDROID_SDHOME"/rootfs-manifest
+fi
+
 # Installs the boot hook, which the user copies into service.d to enable it
 if [ -d ./boot ]; then
     mkdir -p "$DEBDROID_SDHOME"/boot
@@ -106,11 +112,25 @@ fi
 
 if [ -e "$DEBDROID_SDHOME"/img/debian.img ]; then
     step "Keeping the existing debian image: \"$DEBDROID_SDHOME/img/debian.img\""
+
+# The image ships either beside the scripts or as a release asset, so it is
+# fetched only when it is not already here
+# NOTE: Nothing about this is a decision for the user to make. Either path
+#       produces the same ready-to-use image without asking anything.
+elif [ ! -e ./img/debian.img.part-aa ] && [ ! -e ./img/debian.img ]; then
+    step "Downloading the debian image"
+    if ! sh ./debdroid/debdroid_image.sh "$DEBDROID_SDHOME"/img/debian.img; then
+        error "Failed to obtain the debian image." \
+            "Download it manually from the releases page and place it at:" \
+            "\"$DEBDROID_SDHOME/img/debian.img\", then re-run the installer."
+        exit 1
+    fi
 else
     step "Creating the debian image"
 
     # A partial image is worse than none, as it fails later during the fsck
-    if ! cat ./img/debian.img.part-* > "$DEBDROID_SDHOME"/img/debian.img; then
+    if ! cat ./img/debian.img.part-* > "$DEBDROID_SDHOME"/img/debian.img 2>/dev/null &&
+            ! cp ./img/debian.img "$DEBDROID_SDHOME"/img/debian.img; then
         error "Failed to assemble the debian image." \
             "Check the free space on \"$DEBDROID_SDHOME\" and re-run the installer."
         rm -f "$DEBDROID_SDHOME"/img/debian.img

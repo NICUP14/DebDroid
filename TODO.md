@@ -57,6 +57,15 @@ producing and publishing artifacts.
   - [ ] Flip `arch_is_built` on for each as its artifacts land.
 - [ ] Self-build busybox with `CONFIG_SSL_CLIENT`, which empties tier C of the
       provenance manifest and drops the separate `ssl_helper` binary.
+- [ ] Sign the releases, and verify the signature on the device with a pinned
+      key. `signify` or `minisign` is a few hundred lines of Ed25519 and
+      cross-compiles with the same NDK pipeline as e2fsprogs, so this is small
+      work rather than distant work. It closes the one gap
+      `docs/reference/integrity.md` is explicit about: checksums held in this
+      repository are not signatures.
+      Note that debian's own key does not cover the tarball - debian signs the
+      archive, which debootstrap already verifies at build time, so what ships
+      afterwards needs our signature, not theirs.
 - [ ] Add a statically-compiled `strace` binary for issue reporting.
 - [ ] Rescue shell functionality for DebDroid.
 - [ ] Tier 2 tests: run the real manager against a scratch ext2 image on a
@@ -70,15 +79,18 @@ Distribution is the theme: get the repository down to scripts and recipes.
 - [ ] Implement the on-device bootstrap that downloads a tarball, verifies it
       and creates the image with `mkfs.ext2`, with an offline path for when the
       servers are unreachable.
+      **This must stay invisible to users.** Installation is one tap or three
+      terminal lines today, and moving the filesystem online must not turn it
+      into anything more: the installer picks the right tarball, downloads it,
+      verifies it and builds the image without asking anything. Nobody
+      installing DebDroid should ever meet debootstrap or a manifest.
 - [ ] Move the image and binaries out of git to release assets.
       Note this only stops future bloat; reclaiming the 170 MB already in
       history needs a rewrite, which breaks existing clones and forks, so it is
       a decision to take deliberately at a release boundary.
-- [ ] A one-line bootstrap installer.
-- [ ] A signature verifier (`signify` or `minisign`), built from source, so the
-      update path is protected by a signature rather than only by checksums
-      held in the repository. `docs/reference/integrity.md` is explicit about
-      this gap being open.
+- [ ] A one-line bootstrap installer, for people who would rather paste one
+      command than use a file manager. A third option alongside the module and
+      the zip, not a replacement for either.
 
 ## Planned for future versions of DebDroid
 
