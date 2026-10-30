@@ -1,0 +1,27 @@
+# DebDroid rootfs manifest
+#
+# The debian filesystems DebDroid can install, and where to get them.
+#
+# Checksums live here, in the repository, deliberately: they travel with the
+# scripts and are reviewable in the commit history, so a payload's checksum
+# never comes from the same place as the payload. See docs/reference/integrity.md.
+#
+# A TARBALL entry is preferred over an IMAGE entry. A tarball carries no
+# filesystem, so the image is always created locally by busybox's ext2-only
+# mkfs.ext2 and a modern mke2fs can never put features in it that old phone
+# kernels refuse to mount. An IMAGE entry must additionally record its
+# filesystem and feature flags.
+#
+# Format, one record per line, fields separated by "|":
+#   id | kind | arch | release | sha256 | size | url [ | mirror-url ... ]
+#
+#   kind     TARBALL or IMAGE
+#   arch     the debian architecture, matching check_arch
+#   size     uncompressed bytes, used to pick a sensible default image size
+#
+# Checksums below are placeholders until the tarballs are built and published;
+# the bootstrap refuses any entry whose checksum does not verify, so an
+# unfilled entry fails closed rather than installing something unverified.
+
+# bookworm-arm64 | TARBALL | arm64 | bookworm | PLACEHOLDER | 0 | https://github.com/NICUP14/DebDroid/releases/download/rootfs-bookworm/debian-bookworm-arm64.tar.gz
+# bookworm-armhf | TARBALL | armhf | bookworm | PLACEHOLDER | 0 | https://github.com/NICUP14/DebDroid/releases/download/rootfs-bookworm/debian-bookworm-armhf.tar.gz

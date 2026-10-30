@@ -18,6 +18,7 @@ If you want to know how it works, that is in the
 - **[Connect from your computer](remote-access.md)** — SSH in from a laptop.
 - **[Run a desktop](desktop.md)** — a full XFCE4 desktop over VNC.
 - **[Manage storage](storage.md)** — make the Debian install bigger or smaller.
+- **[Recipes](recipes/README.md)** — complete projects: ad blocking, file sync, a VPN, a git server, a CI runner.
 
 ## Keeping it working
 
