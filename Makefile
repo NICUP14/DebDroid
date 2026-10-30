@@ -11,7 +11,7 @@ SCRIPTS = install.sh $(wildcard debdroid/*.sh) $(wildcard command/*.sh) \
           $(wildcard package/*.sh) $(wildcard module/*.sh) bin/debinit
 
 .POSIX:
-.PHONY: all check syntax shellcheck provenance docs version test test-device help
+.PHONY: all check syntax shellcheck functions provenance docs version test test-device help
 
 all: check version provenance docs test
 
@@ -24,7 +24,7 @@ help:
 	@echo 'make all          All of the above'
 	@echo 'make test-device  Print how to run the device suite'
 
-check: syntax shellcheck
+check: syntax shellcheck functions
 
 # Both shells are checked, as the product targets whatever /system/bin/sh is
 syntax:
@@ -46,6 +46,11 @@ shellcheck:
 	else \
 	    echo 'shellcheck: not installed, skipping'; \
 	fi
+
+# Fails on a call to a function the script cannot see, which a shell would
+# otherwise report only at runtime, and not at all behind "2> /dev/null"
+functions:
+	@sh tools/check-functions.sh
 
 # Fails on a changed checksum or a binary nobody wrote down
 provenance:

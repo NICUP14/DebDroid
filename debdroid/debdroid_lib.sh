@@ -124,6 +124,31 @@ check_size()
     esac
 }
 
+# Reads the background supervisor's pid file, checking that it is still valid
+# Usage: read_supervisor [pid-file]   (defaults to DEBDROID_PID)
+# Sets "supervisor_pid" to the supervisor's process id
+# NOTE: The namespace id is stored alongside the pid, as the kernel reuses pids
+#       and signaling the wrong process would be dangerous.
+# NOTE: Defined here rather than in the manager because the uninstaller and the
+#       updater both need it to refuse running over a live environment.
+read_supervisor()
+{
+    supervisor_pid=
+    supervisor_mnt=
+    read_supervisor_file=${1:-$DEBDROID_PID}
+
+    [ -n "$read_supervisor_file" ] || return 1
+    [ -f "$read_supervisor_file" ] || return 1
+
+    read -r supervisor_pid supervisor_mnt < "$read_supervisor_file" 2>/dev/null
+    [ -n "$supervisor_pid" ] && [ -n "$supervisor_mnt" ] || return 1
+    [ -d /proc/"$supervisor_pid" ] || return 1
+
+    current_mnt=$($BUSYBOX readlink /proc/"$supervisor_pid"/ns/mnt 2>/dev/null |
+        $BUSYBOX cut -d ':' -f 2)
+    [ "$current_mnt" = "$supervisor_mnt" ]
+}
+
 # Quotes the arguments into a single string that survives one shell evaluation
 # Sets "DEBDROID_QUOTED" to the quoted string, empty when given no arguments
 # NOTE: Single quotes protect every character except a single quote itself, which

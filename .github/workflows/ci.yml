@@ -31,6 +31,12 @@ jobs:
       - name: Shellcheck
         run: make shellcheck
 
+      # A call to a function the script cannot see fails only at runtime, and
+      # not at all when its stderr is discarded, so a guard meant to refuse an
+      # action silently permits it
+      - name: Function calls resolve
+        run: make functions
+
   test:
     name: Host test suite
     runs-on: ubuntu-latest

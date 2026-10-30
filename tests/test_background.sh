@@ -15,11 +15,11 @@ BUSYBOX=$FAKE_BUSYBOX
 # shellcheck disable=SC1091
 . "$TEST_SD"/debdroid_lib.sh
 
-DEBDROIDMGR_PID="$TEST_TMP"/mnt.pid
-
-# Loads read_supervisor from the product script
-# shellcheck disable=SC2154 # supervisor_pid is set by the function loaded below
-eval "$(sed -n '/^read_supervisor()/,/^}/p' "$TEST_SD"/debdroid_mgr.sh)"
+# NOTE: read_supervisor lives in the shared library rather than the manager, as
+#       the uninstaller and the updater both need it to refuse running over a
+#       live environment. It takes the pid file as an argument.
+DEBDROID_PID="$TEST_TMP"/mnt.pid
+DEBDROIDMGR_PID=$DEBDROID_PID
 
 # The namespace id of this very process, which a valid pid file has to match
 own_mnt=$($BUSYBOX readlink /proc/self/ns/mnt | $BUSYBOX cut -d ':' -f 2)

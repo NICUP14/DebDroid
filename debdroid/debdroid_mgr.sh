@@ -192,25 +192,6 @@ disable_swap()
     $BUSYBOX swapoff "$DEBDROID_SWAP" > /dev/null 2>&1
 }
 
-# Reads the background supervisor's pid file, checking that it is still valid
-# Sets "supervisor_pid" to the supervisor's process id
-# NOTE: The namespace id is stored alongside the pid, as the kernel reuses pids
-#       and signaling the wrong process would be dangerous.
-read_supervisor()
-{
-    supervisor_pid=
-    supervisor_mnt=
-    [ -f "$DEBDROIDMGR_PID" ] || return 1
-
-    read -r supervisor_pid supervisor_mnt < "$DEBDROIDMGR_PID" 2>/dev/null
-    [ -n "$supervisor_pid" ] && [ -n "$supervisor_mnt" ] || return 1
-    [ -d /proc/"$supervisor_pid" ] || return 1
-
-    current_mnt=$($BUSYBOX readlink /proc/"$supervisor_pid"/ns/mnt 2>/dev/null |
-        $BUSYBOX cut -d ':' -f 2)
-    [ "$current_mnt" = "$supervisor_mnt" ]
-}
-
 # Keeps the environment mounted until the supervisor is signaled to stop
 supervise_environment()
 {
@@ -553,7 +534,7 @@ wait_for_supervisor()
 #       other namespace. The bootstrap is skipped, as the supervisor ran it.
 attach_environment()
 {
-    if ! read_supervisor; then
+    if ! read_supervisor "$DEBDROIDMGR_PID"; then
         error "No background environment is running." \
             "Start one with \"debdroid.sh start\""
         return 1
@@ -571,7 +552,7 @@ attach_environment()
 # NOTE: The supervisor's own traps do the cleanup, so there is none here.
 stop_background()
 {
-    if ! read_supervisor; then
+    if ! read_supervisor "$DEBDROIDMGR_PID"; then
         # Clears a stale pid file, so the next start is not misled by it
         $BUSYBOX rm -f "$DEBDROIDMGR_PID"
         error "No background environment is running."
@@ -602,7 +583,7 @@ report_status()
 {
     section "DebDroid status"
 
-    if read_supervisor; then
+    if read_supervisor "$DEBDROIDMGR_PID"; then
         step "Background environment: running (pid $supervisor_pid)"
         step "Log file: $DEBDROIDMGR_LOG"
 
@@ -715,7 +696,7 @@ if [ -z "$DEBDROIDMGR_MNT" ]; then
     export DEBDROIDMGR_MNT DEBDROIDMGR_MODE
 
     # Refuses to start a second background environment over a running one
-    if [ "$DEBDROIDMGR_MODE" = "start" ] && read_supervisor; then
+    if [ "$DEBDROIDMGR_MODE" = "start" ] && read_supervisor "$DEBDROIDMGR_PID"; then
         error "A background environment is already running." \
             "Attach to it with \"debdroid.sh attach\", or stop it first."
         exit 1
