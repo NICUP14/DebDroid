@@ -71,7 +71,26 @@ mkdir -p "$DEBDROID_SDHOME" \
     "$DEBDROID_SDHOME"/img "$DEBDROID_SDHOME"/command
 
 cp -r ./command "$DEBDROID_SDHOME"
-cp -r ./debdroid/* "$DEBDROID_SDHOME"
+
+# Installs the scripts, keeping the files the user is meant to edit
+# NOTE: Earlier versions overwrote "environment" and "debdroid_env.sh" on every
+#       update, silently discarding any customization. A copy is kept as .bak so
+#       a changed default can still be compared against.
+for file in ./debdroid/*; do
+    name=${file##*/}
+
+    case "$name" in
+        environment|debdroid_env.sh)
+            if [ -f "$DEBDROID_SDHOME/$name" ]; then
+                step "Keeping your \"$name\" (new version saved as $name.new)"
+                cp "$file" "$DEBDROID_SDHOME/$name".new
+                continue
+            fi
+            ;;
+    esac
+
+    cp "$file" "$DEBDROID_SDHOME/$name"
+done
 
 # Installs the device test suite, so problems can be diagnosed on the device
 if [ -d ./tests ]; then
@@ -89,7 +108,14 @@ if [ -e "$DEBDROID_SDHOME"/img/debian.img ]; then
     step "Keeping the existing debian image: \"$DEBDROID_SDHOME/img/debian.img\""
 else
     step "Creating the debian image"
-    cat ./img/debian.img.part-* > "$DEBDROID_SDHOME"/img/debian.img
+
+    # A partial image is worse than none, as it fails later during the fsck
+    if ! cat ./img/debian.img.part-* > "$DEBDROID_SDHOME"/img/debian.img; then
+        error "Failed to assemble the debian image." \
+            "Check the free space on \"$DEBDROID_SDHOME\" and re-run the installer."
+        rm -f "$DEBDROID_SDHOME"/img/debian.img
+        exit 1
+    fi
 
     step "Enter a size for the debian image (e.g. 5G, 512M), or press Enter to keep the default:"
     read -r size

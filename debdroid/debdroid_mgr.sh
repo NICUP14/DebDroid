@@ -4,9 +4,15 @@
 CONFIG_DEV_FD=yes
 CONFIG_DEV_IO=yes
 CONFIG_DEV_LOOP=yes
+
+# How /dev is provided, tried in this order; the bind mount is always the last
+# resort, as it shares android's real /dev with the session
+CONFIG_DEV_OVERLAY=yes
+CONFIG_DEV_TMPFS=yes
 CONFIG_DEBDROID_BIN=yes
 CONFIG_DEBDROID_LIB=yes
 CONFIG_ENV_FSCK=yes
+CONFIG_ENV_APEX=yes # Needed by android's own tools on android 10 and later
 CONFIG_ENV_SHMMAX=268435456 # 250MB
 CONFIG_ENV_DNSSERVER=1.1.1.1 # Fallback dns server (Cloudflare)
 
@@ -232,28 +238,136 @@ supervise_environment()
     done
 }
 
+# Truncates a configuration file inside the image, ready to be written
+# Usage: write_env_file <path-in-env>
+# NOTE: The file is unlinked first rather than truncated in place. A debian
+#       image can ship /etc/resolv.conf as an absolute symlink, which
+#       systemd-resolved does, and writing through it would land on the host's
+#       real /etc instead of inside the image. Unlinking removes the symlink
+#       itself, never its target.
+write_env_file()
+{
+    $BUSYBOX rm -f "$DEBDROIDMGR_ENV/$1"
+    true > "$DEBDROIDMGR_ENV/$1"
+
+    # An existing file keeps its old mode when truncated, so set it explicitly
+    chmod 644 "$DEBDROIDMGR_ENV/$1"
+}
+
+# Populates the session's own /dev with the nodes debian expects to find
+# NOTE: This runs after /dev is mounted, never before. Creating these in the
+#       host's real /dev is what earlier versions did, which left /dev/fd,
+#       /dev/std* and /dev/loopN behind in android itself.
+populate_dev()
+{
+    dev_root="$DEBDROIDMGR_ENV"/dev
+
+    # Links the standard streams to their file descriptor
+    if [ "$CONFIG_DEV_FD" = "yes" ] && [ ! -e "$dev_root"/fd ]; then
+        ln -s /proc/self/fd "$dev_root"/fd
+    fi
+    if [ "$CONFIG_DEV_IO" = "yes" ]; then
+        [ ! -e "$dev_root"/stdin ]  && ln -s /proc/self/fd/0 "$dev_root"/stdin
+        [ ! -e "$dev_root"/stdout ] && ln -s /proc/self/fd/1 "$dev_root"/stdout
+        [ ! -e "$dev_root"/stderr ] && ln -s /proc/self/fd/2 "$dev_root"/stderr
+    fi
+
+    # Links the loopback devices, which android keeps under /dev/block
+    if [ "$CONFIG_DEV_LOOP" = "yes" ]; then
+        for idx in $($BUSYBOX seq 0 7); do
+            [ -e "$dev_root"/loop"$idx" ] && continue
+            [ -e "$dev_root"/block/loop"$idx" ] || continue
+            ln -s /dev/block/loop"$idx" "$dev_root"/loop"$idx"
+        done
+    fi
+
+    return 0
+}
+
+# Copies the device nodes a debian userland cannot start without
+# NOTE: Used by the tmpfs fallback, where /dev starts out empty.
+clone_dev_nodes()
+{
+    dev_root="$DEBDROIDMGR_ENV"/dev
+
+    # NOTE: "cp -a" on a device node recreates the node itself rather than
+    #       copying its contents, which is exactly what is wanted here.
+    for node in null zero full random urandom tty ptmx console; do
+        [ -e /dev/"$node" ] || continue
+        [ -e "$dev_root"/"$node" ] && continue
+        $BUSYBOX cp -a /dev/"$node" "$dev_root"/ 2> /dev/null
+    done
+
+    # The loop devices live in a subdirectory the image does not provide
+    if [ -d /dev/block ]; then
+        mkdir -p "$dev_root"/block
+        for idx in $($BUSYBOX seq 0 7); do
+            [ -e /dev/block/loop"$idx" ] || continue
+            $BUSYBOX cp -a /dev/block/loop"$idx" "$dev_root"/block/ 2> /dev/null
+        done
+    fi
+}
+
+# Mounts /dev, trying the three approaches in order of isolation
+# NOTE: An overlay gives the session a writable /dev without touching android's.
+#       A tmpfs is the next best thing. A bind mount shares android's real /dev,
+#       so anything written lands in the running system, which is why it is last.
+mount_dev()
+{
+    mkdir -p "$DEBDROIDMGR_ENV"/dev
+
+    # The overlay's upper and work directories must live on the same filesystem,
+    # so both are subdirectories of one tmpfs
+    # NOTE: Earlier versions put the upper dir on a tmpfs and the work dir on the
+    #       image, which the kernel always rejected, so the overlay never once
+    #       mounted and the bind fallback was taken every time.
+    if [ "$CONFIG_DEV_OVERLAY" = "yes" ]; then
+        mkdir -p "$DEBDROIDMGR_ENV"/mnt/dev-ovl
+        if mount_fs mnt/dev-ovl -t tmpfs -o mode=755 tmpfs; then
+            # NOTE: The overlay takes its mode from the upper directory, so 755
+            #       it is: a 700 upper would hide /dev from every non-root user.
+            mkdir -p "$DEBDROIDMGR_ENV"/mnt/dev-ovl/upper \
+                     "$DEBDROIDMGR_ENV"/mnt/dev-ovl/work
+            chmod 755 "$DEBDROIDMGR_ENV"/mnt/dev-ovl/upper
+            chmod 700 "$DEBDROIDMGR_ENV"/mnt/dev-ovl/work
+
+            if $BUSYBOX mount -t overlay overlay \
+                    -o lowerdir=/dev,upperdir="$DEBDROIDMGR_ENV"/mnt/dev-ovl/upper,workdir="$DEBDROIDMGR_ENV"/mnt/dev-ovl/work \
+                    "$DEBDROIDMGR_ENV"/dev > /dev/null 2>&1; then
+                populate_dev
+                return 0
+            fi
+
+            # Releases the tmpfs, as the overlay it was prepared for failed
+            $BUSYBOX umount "$DEBDROIDMGR_ENV"/mnt/dev-ovl > /dev/null 2>&1
+        fi
+        rm -rf "$DEBDROIDMGR_ENV"/mnt/dev-ovl
+    fi
+
+    # A private tmpfs still keeps the session out of android's /dev
+    if [ "$CONFIG_DEV_TMPFS" = "yes" ]; then
+        if $BUSYBOX mount -t tmpfs -o rw,mode=755,nosuid tmpfs \
+                "$DEBDROIDMGR_ENV"/dev > /dev/null 2>&1; then
+            warn "Overlay is unavailable, using a private tmpfs for /dev." \
+                "Android's own /dev stays untouched."
+            clone_dev_nodes
+            populate_dev
+            return 0
+        fi
+    fi
+
+    # Last resort: the session shares android's real /dev
+    warn "Falling back to a bind-mount for /dev." \
+        "The session shares android's /dev, so changes to it are system-wide."
+    mount_required dev --bind /dev
+    populate_dev
+}
+
 # Mounts the chroot environment
 start_environment()
 {
     # Disables mount propagation
     $BUSYBOX mount --make-rprivate /
-
-    # Links the standard streams to their file descriptor
-    if [ "$CONFIG_DEV_FD" = "yes" ] && [ ! -e "/dev/fd" ]; then
-        ln -s /proc/self/fd /dev/fd
-    fi
-    if [ "$CONFIG_DEV_IO" = "yes" ]; then
-        [ ! -e "/dev/stdin" ]  && ln -s /proc/self/fd/0 /dev/stdin
-        [ ! -e "/dev/stdout" ] && ln -s /proc/self/fd/1 /dev/stdout
-        [ ! -e "/dev/stderr" ] && ln -s /proc/self/fd/2 /dev/stderr
-    fi
-
-    # Links /dev/block loopback devices under /dev
-    if [ "$CONFIG_DEV_LOOP" = "yes" ]; then
-        for idx in $($BUSYBOX seq 0 7); do
-            [ ! -e /dev/loop"$idx" ] && ln -s /dev/block/loop"$idx" /dev/loop"$idx"
-        done
-    fi
 
     # Ensures DEBDROIDMGR_IMG is a regular file
     if [ ! -f "$DEBDROIDMGR_IMG" ]; then
@@ -303,20 +417,8 @@ start_environment()
     step "Mounting system filesystems"
     mount_required proc -t proc /proc
 
-    # Mounts the /dev filesystem (overlayed)
-    mkdir -p "$DEBDROIDMGR_ENV"/dev "$DEBDROIDMGR_ENV"/mnt/dev-work
-    mount_fs mnt/dev-upper -t tmpfs tmpfs
-    chmod 700 "$DEBDROIDMGR_ENV"/mnt/dev-upper "$DEBDROIDMGR_ENV"/mnt/dev-work
-    if ! $BUSYBOX mount -t overlay overlay \
-            -o lowerdir=/dev,upperdir="$DEBDROIDMGR_ENV"/mnt/dev-upper,workdir="$DEBDROIDMGR_ENV"/mnt/dev-work \
-            "$DEBDROIDMGR_ENV"/dev > /dev/null 2>&1; then
-        warn "Overlay is not supported, falling back to a bind-mount for /dev."
-        mount_required dev --bind /dev
-
-        # Cleans the unused tmpfs
-        $BUSYBOX umount "$DEBDROIDMGR_ENV"/mnt/dev-upper
-        rm -rf "$DEBDROIDMGR_ENV"/mnt/dev-upper "$DEBDROIDMGR_ENV"/mnt/dev-work
-    fi
+    # Mounts the /dev filesystem, preferring a layer the session can write to
+    mount_dev
 
     # Mounts the /dev/pts filesystem
     mount_required dev/pts -t devpts devpts
@@ -333,6 +435,13 @@ start_environment()
     # Mounts the /system filesystem
     mount_optional system -r /system
 
+    # Mounts /apex, where android 10 and later keep bionic and its libraries
+    # NOTE: Without it android's own tools (am, settings, svc) cannot run from
+    #       inside the chroot on a modern device, as their linker lives there.
+    if [ "$CONFIG_ENV_APEX" = "yes" ] && [ -d /apex ]; then
+        mount_optional apex --bind /apex
+    fi
+
     # Mounts the /sdcard filesystem
     mount_optional sdcard --bind /sdcard
 
@@ -344,8 +453,7 @@ start_environment()
 
     # Mounts and preloads libs in the /debdroid/lib directory
     mkdir -p "$DEBDROIDMGR_ENV"/debdroid/lib
-    true > "$DEBDROIDMGR_ENV"/etc/ld.so.preload
-    chmod 644 "$DEBDROIDMGR_ENV"/etc/ld.so.preload
+    write_env_file etc/ld.so.preload
     if [ "$CONFIG_DEBDROID_LIB" = "yes" ]; then
         mount_optional debdroid/lib --bind "$DEBDROIDMGR_LIB"
 
@@ -365,11 +473,10 @@ start_environment()
     enable_swap
 
     # Creates the /etc/resolv.conf file
-    true > "$DEBDROIDMGR_ENV"/etc/resolv.conf
-    chmod 644 "$DEBDROIDMGR_ENV"/etc/resolv.conf
+    write_env_file etc/resolv.conf
     for server in 1 2 3 4; do
-        [ -z "$(getprop net.dns$server)" ] && break
-        echo "nameserver $(getprop net.dns$server)" >> "$DEBDROIDMGR_ENV"/etc/resolv.conf
+        [ -z "$($BUSYBOX getprop net.dns$server)" ] && break
+        echo "nameserver $($BUSYBOX getprop net.dns$server)" >> "$DEBDROIDMGR_ENV"/etc/resolv.conf
     done
 
     # Creates a fallback for the /etc/resolv.conf file
@@ -379,8 +486,7 @@ start_environment()
     fi
 
     # Creates the /etc/hosts file
-    true > "$DEBDROIDMGR_ENV"/etc/hosts
-    chmod 644 "$DEBDROIDMGR_ENV"/etc/hosts
+    write_env_file etc/hosts
     echo "127.0.0.1     localhost $($BUSYBOX hostname)" >> "$DEBDROIDMGR_ENV"/etc/hosts
     echo "::1           localhost ip6-localhost ip6-loopback" >> "$DEBDROIDMGR_ENV"/etc/hosts
 }
