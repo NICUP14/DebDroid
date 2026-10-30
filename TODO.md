@@ -1,13 +1,19 @@
 # TODO List
 
-Progress against the roadmap. See [CHANGELOG.md](CHANGELOG.md) for what each
-release actually shipped.
+Work is tracked against the version it is targeted at. The current version is
+the one in `debdroid/debdroid_env.sh`, which is the single source of truth;
+CI checks that this file agrees with it.
 
-## Done in v1.2.6
+**Current version: v1.2.6**
+
+See [CHANGELOG.md](CHANGELOG.md) for what each release actually shipped.
+
+## For DebDroid v1.2.6 (released)
 
 - [X] Implement DebDroid background mode. (start, stop, attach, status)
 - [X] Implement a smart configuration system for `debdroid_mgr.sh`
-- [X] Rescue and diagnostics: `tests/device.sh` reports what a bug needs.
+- [X] Report command functionality. (`tests/device.sh` auto-generates what an
+      issue report needs)
 - [X] Update command functionality. (`debdroid.sh self-update`)
 - [X] Uninstall functionality.
 - [X] Fix the `/dev` overlay, which had never actually mounted.
@@ -19,46 +25,69 @@ release actually shipped.
 - [X] Wakelock support, so an always-on server stays reachable.
 - [X] Swap support, replacing the third-party magisk module.
 - [X] Start at boot, via a guarded `service.d` hook.
-- [X] QoL commands: `user`, `sshserver`, `vncserver`, `swap`.
+- [X] Add QoL commands:
+  - [X] `command/update`: Environment updater script.
+  - [X] `command/user`: Non-root user setup.
+  - [X] `command/vncserver`: Easy vnc server management.
+  - [X] `command/sshserver`: Easy ssh server management.
+  - [X] `command/swap`: Swapfile management.
 - [X] Magisk, KernelSU and APatch module.
 - [X] Automated tests and CI, replacing manual checking.
 - [X] Record the provenance of every bundled binary; drop the committed APKs.
 - [X] Update docs:
   - [X] Split them into guide and reference tiers.
-  - [X] Add the x11 xfce4 vnc guide.
-  - [X] Document the `debdroid_mgr.sh` configuration flags.
-  - [X] Add preloading and binary mentions to the security page.
-  - [X] Add the randomness libraries to the patches page.
+  - [X] Add x11 xfce4 vnc guide.
+  - [X] Document `debdroid_mgr.sh` configuration flags.
+  - [X] Add preloading and binary mentions to `docs/reference/security.md`.
+  - [X] Add randomness library mentions to `docs/reference/patches.md`.
+  - [X] Add ReTerminal mention to the install guide.
 
-## Next
+## Planned for v1.3
 
-- [ ] Build the armhf, amd64 and i386 binaries. The scripts and recipes are in
-      place; only the artifacts are missing. `amd64` is worth doing early, as it
-      makes the test suite runnable in CI against the real binaries.
+Multi-arch is the theme: the plumbing landed in 1.2.6, so this is mostly
+producing and publishing artifacts.
+
+- [ ] Multi-arch support:
+  - [ ] Build the armhf binaries. This is the one that matters most, as the
+        2012-2015 devices are largely 32-bit.
+  - [ ] Build the amd64 binaries. Worth doing early for a second reason: it
+        makes the test suite runnable in CI against the real binaries rather
+        than host substitutes.
+  - [ ] Build the i386 binaries.
+  - [ ] Flip `arch_is_built` on for each as its artifacts land.
 - [ ] Self-build busybox with `CONFIG_SSL_CLIENT`, which empties tier C of the
       provenance manifest and drops the separate `ssl_helper` binary.
-- [ ] Publish the rootfs tarballs and fill in `rootfs/manifest`, then implement
-      the on-device bootstrap that creates the image with `mkfs.ext2`.
-- [ ] Move the image and binaries out of git to release assets. Note this only
-      stops future bloat; reclaiming the 170 MB already in history needs a
-      rewrite, which breaks existing clones.
+- [ ] Add a statically-compiled `strace` binary for issue reporting.
+- [ ] Rescue shell functionality for DebDroid.
 - [ ] Tier 2 tests: run the real manager against a scratch ext2 image on a
       Linux host with root.
+
+## Planned for v1.4
+
+Distribution is the theme: get the repository down to scripts and recipes.
+
+- [ ] Publish the rootfs tarballs and fill in `rootfs/manifest`.
+- [ ] Implement the on-device bootstrap that downloads a tarball, verifies it
+      and creates the image with `mkfs.ext2`, with an offline path for when the
+      servers are unreachable.
+- [ ] Move the image and binaries out of git to release assets.
+      Note this only stops future bloat; reclaiming the 170 MB already in
+      history needs a rewrite, which breaks existing clones and forks, so it is
+      a decision to take deliberately at a release boundary.
 - [ ] A one-line bootstrap installer.
-
-## Later
-
 - [ ] A signature verifier (`signify` or `minisign`), built from source, so the
       update path is protected by a signature rather than only by checksums
-      held in the repository. See `docs/reference/integrity.md`, which is
-      explicit about this gap.
+      held in the repository. `docs/reference/integrity.md` is explicit about
+      this gap being open.
+
+## Planned for future versions of DebDroid
+
 - [ ] A thin terminal APK, so DebDroid has an installable icon. The groundwork
       is background mode, which is done: the app would attach to a running
       session.
 - [ ] Benchmarks against a Pi Zero 2 and a Pi 3, published. The comparison
       table in the README makes claims that measurements would settle.
 - [ ] More recipes: Nextcloud, Home Assistant, a media server.
-- [ ] Add a statically-compiled `strace` for issue reporting.
 - [ ] GPU acceleration.
 
 ## Not doing

@@ -109,7 +109,12 @@ jobs:
           fi
           echo "ok: no ext4 image creation"
 
-      # The version is the single source of truth and must match a release tag
+      # DEBDROID_VER is the source of truth; module.prop, TODO.md and the
+      # changelog all repeat it, and a stale copy misreports the version
+      - name: Version numbers agree
+        run: make version
+
+      # A release tag additionally has to match what the tree says
       - name: Version matches the tag
         if: startsWith(github.ref, 'refs/tags/v')
         run: |

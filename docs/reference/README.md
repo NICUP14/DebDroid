@@ -30,6 +30,7 @@ for that and assume nothing.
 
 - **[Building](building.md)** — cross-compiling the bundled binaries.
 - **[Testing](testing.md)** — the three test tiers and how to run them.
+- **[Releasing](releasing.md)** — the release process and where versions live.
 
 ## Design constraints
 
