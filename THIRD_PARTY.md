@@ -98,7 +98,7 @@ Each of the three was examined before being dropped:
 
 DebDroid's swap support reimplements what
 [janithcooray's swap module](https://github.com/janithcooray/lin_os_swap_mod)
-does, as `command/swap.sh` plus the `CONFIG_ENV_SWAP*` options.
+does, as `debdroid_swap.sh` plus the `CONFIG_ENV_SWAP*` options.
 
 This is an independent implementation rather than a port: the module ships no
 license file, and the mechanism it uses — `dd`, `mkswap`, `swapon` and a

@@ -72,10 +72,14 @@ Runs a command script inside the environment.
 | `user` | Creates a non-root user with the right groups |
 | `sshserver` | Installs and starts an ssh server |
 | `vncserver` | Installs and starts an XFCE4 desktop over VNC |
-| `swap` | Creates and manages the swapfile (runs on the android side) |
 
 Names may contain only letters, digits, `_` and `-`; anything else is rejected
 before the filesystem is touched.
+
+> [!NOTE]
+> These run **inside** debian. Anything belonging to the device rather than to
+> the userland is a top-level subcommand instead — `swap` is the example, and
+> it refuses to run if it finds itself inside a session.
 
 ## Maintenance
 
@@ -95,6 +99,23 @@ of 1024.
 | | `5 G` | No spaces |
 
 Growing keeps the data. Shrinking keeps the data but fails if it does not fit.
+
+### `swap <create [SIZE] | remove | status>`
+
+Manages the swapfile sessions use when `CONFIG_ENV_SWAP=yes`.
+
+| Option | Does |
+| --- | --- |
+| `create [SIZE]` | Writes and formats the swapfile, default 1G |
+| `remove` | Disables and deletes it |
+| `status` | Reports the swapfile, the swappiness and the active swap areas |
+
+Runs on the android side, not inside debian, and refuses to run from within a
+session. Creating the file takes minutes, so a session only ever *enables* an
+existing one.
+
+Checks free space first, and refuses on an f2fs `/data`, where `swapon` on a
+regular file fails on the kernels DebDroid targets.
 
 ### `self-update [--check] [--rollback] [--offline FILE]`
 

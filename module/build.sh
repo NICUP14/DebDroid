@@ -43,6 +43,12 @@ cp "$REPO_DIR"/install.sh "$STAGING"/
 cp -r "$REPO_DIR"/debdroid "$REPO_DIR"/command "$REPO_DIR"/bin "$REPO_DIR"/lib \
       "$REPO_DIR"/tests "$REPO_DIR"/boot "$STAGING"/
 
+# NOTE: The manifest carries the checksums the image is verified against. The
+#       installer needs it whenever the image is not bundled, which is exactly
+#       the case for a module built without img/.
+mkdir -p "$STAGING"/rootfs
+cp "$REPO_DIR"/rootfs/manifest "$STAGING"/rootfs/manifest
+
 # The image is only included when it is present, as it is the largest piece and
 # newer installs fetch a rootfs instead
 if [ -d "$REPO_DIR"/img ]; then

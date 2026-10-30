@@ -30,7 +30,7 @@ See [CHANGELOG.md](CHANGELOG.md) for what each release actually shipped.
   - [X] `command/user`: Non-root user setup.
   - [X] `command/vncserver`: Easy vnc server management.
   - [X] `command/sshserver`: Easy ssh server management.
-  - [X] `command/swap`: Swapfile management.
+  - [X] `debdroid.sh swap`: Swapfile management (android side, not in command/).
 - [X] Magisk, KernelSU and APatch module.
 - [X] Automated tests and CI, replacing manual checking.
 - [X] Record the provenance of every bundled binary; drop the committed APKs.

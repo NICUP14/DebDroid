@@ -1,14 +1,25 @@
 #!/system/bin/sh
-# swap.sh: Creates and manages the swapfile DebDroid sessions enable
+# debdroid_swap.sh: Creates and manages the swapfile DebDroid sessions enable
 #
 # Swap keeps memory-hungry desktops from triggering an out-of-memory reboot on
 # devices with little RAM. Creating the file is slow, so it happens here once
 # rather than during every session start.
 #
-# NOTE: Unlike the other command scripts this one runs on the android side, as
-#       swap belongs to the device rather than to the debian userland.
+# Usage: debdroid.sh swap <create [size] | remove | status>
 #
-# Usage: sh /sdcard/debdroid/command/swap.sh <create [size] | remove | status>
+# NOTE: This runs on the android side, not inside debian: swap belongs to the
+#       device. It therefore lives here rather than in command/, whose scripts
+#       the frontend runs inside the chroot - where /data is not mounted and
+#       busybox is at a different path, so this would fail confusingly.
+
+# Refuses to run inside the chroot, where none of this would work
+# NOTE: /debdroid/bin only exists inside a session, as that is where the
+#       bundled binaries are mounted.
+if [ -d /debdroid/bin ]; then
+    echo "Error: This manages the device's swap and must run outside debian." >&2
+    echo "    Exit the session, then run: debdroid.sh swap $*" >&2
+    exit 1
+fi
 
 for file in debdroid_env.sh debdroid_ui.sh debdroid_lib.sh; do
     if [ ! -f /sdcard/debdroid/"$file" ]; then
@@ -187,7 +198,7 @@ case "$SWAP_OPT" in
     status) report_swap ;;
     *)
         error "Unknown option: \"$SWAP_OPT\"" \
-            "Usage: $0 <create [size] | remove | status>"
+            "Usage: debdroid.sh swap <create [size] | remove | status>"
         exit 1
         ;;
 esac

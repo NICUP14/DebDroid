@@ -165,7 +165,7 @@ The device ran out of memory. Two things fix it, and DebDroid does both:
 ```bash
 su
 # Give the system room to breathe (takes a few minutes, needed once)
-sh /sdcard/debdroid/command/swap.sh create 2G
+sh /sdcard/debdroid/debdroid.sh swap create 2G
 ```
 
 Then set `CONFIG_ENV_SWAP=yes` in `/sdcard/debdroid/debdroid_mgr.sh`.

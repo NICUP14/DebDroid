@@ -66,7 +66,7 @@ mnt/                   Where the image is mounted
 mnt.lock               The session lock
 mnt.pid                The background supervisor's pid and namespace
 mnt.log                Background startup output
-swapfile               Created on request by command/swap.sh
+swapfile               Created on request by debdroid_swap.sh
 backup/                The previous version, for self-update --rollback
 ```
 

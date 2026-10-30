@@ -19,7 +19,7 @@ project did not keep a changelog before 1.2.6.
   session killed `sshd` and any VNC server with it.
 - **Wakelock support** (`CONFIG_ENV_WAKELOCK`), without which the device deep
   sleeps and an always-on server stops answering.
-- **Managed swap** (`CONFIG_ENV_SWAP` plus `command/swap.sh`), replacing the
+- **Managed swap** (`CONFIG_ENV_SWAP` plus `debdroid.sh swap`), replacing the
   third-party Magisk module the troubleshooting guide used to point at.
 - **A start-at-boot hook** (`boot/debdroid.service.sh`) for Magisk, KernelSU
   and APatch, guarded by a sentinel so a failed attempt stands down rather than

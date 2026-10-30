@@ -79,7 +79,7 @@ A swapfile gives the system room to breathe:
 
 ```bash
 su
-sh /sdcard/debdroid/command/swap.sh create 2G
+sh /sdcard/debdroid/debdroid.sh swap create 2G
 ```
 
 This takes a few minutes, writes a 2 GB file to internal storage, and only
@@ -96,7 +96,7 @@ to:
 CONFIG_ENV_SWAP=yes
 ```
 
-Check it with `sh /sdcard/debdroid/command/swap.sh status`.
+Check it with `sh /sdcard/debdroid/debdroid.sh swap status`.
 
 ### If swap doesn't work on your device
 

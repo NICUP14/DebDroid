@@ -80,6 +80,10 @@ Options:
       Resizes the debian image to the specified size.
       Example: debdroid.sh resize 5G
 
+  swap [create [SIZE] | remove | status]
+      Manages the swapfile sessions use. Runs on the android side.
+      Example: debdroid.sh swap create 2G
+
   self-update [--check] [--rollback] [--offline FILE]
       Updates DebDroid itself. To update debian instead, run
       'debdroid.sh command update'.
@@ -140,6 +144,13 @@ elif [ "$DEBDROID_OPT" = "command" ]; then
 # Handles the "resize" option
 elif [ "$DEBDROID_OPT" = "resize" ]; then
     sh "$DEBDROID_SDHOME"/debdroid_resize.sh "$DEBDROID_SUBOPT"
+
+# Handles the "swap" option
+# NOTE: Dispatched here rather than through "command", whose scripts run inside
+#       the chroot; swap belongs to the device and has to run outside it.
+elif [ "$DEBDROID_OPT" = "swap" ]; then
+    shift
+    sh "$DEBDROID_SDHOME"/debdroid_swap.sh "$@"
 
 # Handles the "self-update" option
 # NOTE: Named apart from "command update", which updates debian rather than

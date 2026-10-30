@@ -83,7 +83,7 @@ On device, two locations: `/sdcard/debdroid` (scripts, image) and
 | A path or env variable | `debdroid/debdroid_env.sh`, `docs/reference/configuration.md` |
 | In-chroot bootstrap | `bin/debinit`, `docs/reference/patches.md` |
 | Something inside Debian | `command/*.sh` (these run in the chroot) |
-| Something on the Android side | `command/swap.sh` is the example; note the difference |
+| Something on the Android side | `debdroid.sh swap` is the example; note the difference |
 | Install or update flow | `install.sh`, `debdroid/debdroid_update.sh`, `debdroid/debdroid_image.sh` |
 | Uninstall | `debdroid/debdroid_uninstall.sh` |
 | A bundled binary | `provenance/manifest`, `THIRD_PARTY.md`, `package/build_all.sh`, `docs/reference/building.md` |

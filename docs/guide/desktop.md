@@ -23,7 +23,7 @@ swap, Android may kill things or reboot the device:
 
 ```bash
 su
-sh /sdcard/debdroid/command/swap.sh create 2G
+sh /sdcard/debdroid/debdroid.sh swap create 2G
 ```
 
 Then set `CONFIG_ENV_SWAP=yes` in `/sdcard/debdroid/debdroid_mgr.sh`.

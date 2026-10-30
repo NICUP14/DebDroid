@@ -675,6 +675,14 @@ DEBDROIDMGR_PID="$DEBDROIDMGR_ENV".pid
 DEBDROIDMGR_LOG="$DEBDROIDMGR_ENV".log
 shift 4
 
+# Derives the paths the frontend would otherwise have exported
+# NOTE: This script sources no environment file, and its usage says it can be
+#       run directly. Without these defaults an empty wakelock name would be
+#       written to /sys/power/wake_lock, and the swap checks would test "".
+#       An exported value still wins, so the frontend keeps overriding them.
+: "${DEBDROID_WAKELOCK:=debdroid}"
+: "${DEBDROID_SWAP:=${DEBDROIDMGR_BIN%/*}/swapfile}"
+
 # Selects what to do with the environment, defaulting to a foreground session
 : "${DEBDROIDMGR_MODE:=run}"
 

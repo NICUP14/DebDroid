@@ -57,7 +57,7 @@ what catches a damaged image before it is mounted and made worse.
 | Flag | Default | Effect |
 | --- | --- | --- |
 | `CONFIG_ENV_WAKELOCK` | `yes` | Hold a wakelock, so the device keeps serving with the screen off |
-| `CONFIG_ENV_SWAP` | `no` | Enable the swapfile created by `command/swap.sh` |
+| `CONFIG_ENV_SWAP` | `no` | Enable the swapfile created by `debdroid.sh swap` |
 | `CONFIG_ENV_SWAPPINESS` | `60` | How eagerly the kernel swaps, 0 to 100 |
 | `CONFIG_ENV_SWAP_PRIO` | *(empty)* | Swap priority; empty places it below any existing zram |
 

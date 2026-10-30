@@ -128,9 +128,20 @@ elif [ ! -e ./img/debian.img.part-aa ] && [ ! -e ./img/debian.img ]; then
 else
     step "Creating the debian image"
 
-    # A partial image is worse than none, as it fails later during the fsck
-    if ! cat ./img/debian.img.part-* > "$DEBDROID_SDHOME"/img/debian.img 2>/dev/null &&
-            ! cp ./img/debian.img "$DEBDROID_SDHOME"/img/debian.img; then
+    # The image ships either whole or split into parts, depending on how the
+    # tree was obtained
+    # NOTE: A partial image is worse than none, as it only fails later during
+    #       the filesystem check, so a failure here removes what it wrote.
+    if [ -e ./img/debian.img ]; then
+        assemble_ok=no
+        cp ./img/debian.img "$DEBDROID_SDHOME"/img/debian.img && assemble_ok=yes
+    else
+        assemble_ok=no
+        cat ./img/debian.img.part-* > "$DEBDROID_SDHOME"/img/debian.img &&
+            assemble_ok=yes
+    fi
+
+    if [ "$assemble_ok" != "yes" ]; then
         error "Failed to assemble the debian image." \
             "Check the free space on \"$DEBDROID_SDHOME\" and re-run the installer."
         rm -f "$DEBDROID_SDHOME"/img/debian.img
