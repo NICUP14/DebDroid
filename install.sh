@@ -12,7 +12,7 @@ echo 'Author: NICUP14'
 echo
 
 # Checks for the required debdroid files
-for file in debdroid_env.sh debdroid_ui.sh; do
+for file in debdroid_env.sh debdroid_ui.sh debdroid_lib.sh; do
     if [ ! -f ./debdroid/"$file" ]; then
         echo "Error: Missing required file: ./debdroid/$file" >&2
         echo "    Change your current directory to the debdroid root folder and try again." >&2
@@ -24,21 +24,19 @@ done
 . ./debdroid/debdroid_env.sh
 # shellcheck disable=SC1091
 . ./debdroid/debdroid_ui.sh
+# shellcheck disable=SC1091
+. ./debdroid/debdroid_lib.sh
+
+# Uses the bundled busybox, as the installed one does not exist yet on a fresh install
+# NOTE: find_busybox replaces the install path set by debdroid_env.sh while it is missing
+# NOTE: BUSYBOX keeps the export from debdroid_env.sh, so the helpers below see it
+# shellcheck disable=SC2034
+[ -x ./bin/busybox ] && BUSYBOX=./bin/busybox
+require_busybox
 setup_colors
 
-# Checks for a matching architecture
-ARCH=$(getprop ro.product.cpu.abi)
-if [ "$ARCH" != "arm64-v8a" ]; then
-    error "Unsupported architecture: \"$ARCH\"" \
-        "This script only works on arm64-v8a (aarch64)."
-    exit 1
-fi
-
-# Check if the user has root permissions 
-if [ "$(id -u)" -ne 0 ]; then
-    error "Missing required super-user permissions."
-    exit 1
-fi
+require_arch
+require_root
 
 section "Installing DebDroid v$DEBDROID_VER"
 
@@ -54,9 +52,6 @@ for bin in "$DEBDROID_HOME"/bin/*; do
     chmod 755 "$bin"
 done
 chown -R root:root "$DEBDROID_HOME"/bin
-
-# Enables colors on a fresh install, now that busybox is installed
-setup_colors
 
 # Installs project libraries
 cp -r ./lib/ "$DEBDROID_HOME"

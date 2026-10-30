@@ -1,7 +1,7 @@
 #!/system/bin/sh
 
 # Checks for the required debdroid files
-for file in debdroid_env.sh debdroid_ui.sh; do
+for file in debdroid_env.sh debdroid_ui.sh debdroid_lib.sh; do
     if [ ! -f /sdcard/debdroid/"$file" ]; then
         echo "Error: Missing required file: /sdcard/debdroid/$file" >&2
         exit 1
@@ -12,6 +12,9 @@ done
 . /sdcard/debdroid/debdroid_env.sh
 # shellcheck disable=SC1091
 . /sdcard/debdroid/debdroid_ui.sh
+# shellcheck disable=SC1091
+. /sdcard/debdroid/debdroid_lib.sh
+require_busybox
 setup_colors
 
 # Prints HELP Usage
@@ -43,25 +46,13 @@ Examples:
 exit
 fi
 
-# Checks for a matching architecture
-ARCH=$(getprop ro.product.cpu.abi)
-if [ "$ARCH" != "arm64-v8a" ]; then
-    error "Unsupported architecture: \"$ARCH\"" \
-        "This script only works on arm64-v8a (aarch64)."
-    exit 1
-fi
+require_arch
+require_root
 
-# Check if the user has root permissions 
-if [ "$(id -u)" -ne 0 ]; then
-    error "Missing required super-user permissions."
-    exit 1
-fi
-
-# shellcheck disable=SC2124
-DEBDROIDRSZ_SIZE="$@"
+DEBDROIDRSZ_SIZE=$1
 
 # Checks for a valid size
-if ! echo "$DEBDROIDRSZ_SIZE" | $BUSYBOX grep -Eq '^[0-9]+[KMG]$'; then
+if ! check_size "$DEBDROIDRSZ_SIZE"; then
     error "Invalid size: \"$DEBDROIDRSZ_SIZE\"" \
         "Expected an integer followed by K, M or G (e.g. 5G)."
     exit 1

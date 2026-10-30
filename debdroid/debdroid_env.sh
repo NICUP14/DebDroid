@@ -1,6 +1,6 @@
 #!/system/bin/sh
 
-export DEBDROID_VER='1.2'
+export DEBDROID_VER='1.2.6'
 
 export DEBDROID_SDHOME=/sdcard/debdroid
 export DEBDROID_IMG="$DEBDROID_SDHOME"/img/debian.img
