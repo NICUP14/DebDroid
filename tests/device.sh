@@ -178,7 +178,11 @@ else
 fi
 
 # Loop devices are how the image gets mounted
-loops=$($BUSYBOX ls /dev/block/loop* 2>/dev/null | $BUSYBOX wc -l)
+# NOTE: Counted with a glob rather than by parsing ls output
+loops=0
+for loop_device in /dev/block/loop*; do
+    [ -e "$loop_device" ] && loops=$((loops + 1))
+done
 if [ "$loops" -gt 0 ]; then
     t_ok "loop devices are present ($loops found)"
 else

@@ -186,7 +186,13 @@ if [ "$RESPLIT" = "yes" ]; then
     echo ":: Re-splitting into parts for git"
     rm -f "$REPO_DIR"/img/debian.img.part-*
     split -b "$PART_SIZE" "$IMAGE" "$REPO_DIR"/img/debian.img.part-
-    echo " -> $(ls "$REPO_DIR"/img/debian.img.part-* | wc -l) part(s)"
+
+    # Counts with a glob rather than parsing ls output
+    parts=0
+    for part in "$REPO_DIR"/img/debian.img.part-*; do
+        [ -f "$part" ] && parts=$((parts + 1))
+    done
+    echo " -> $parts part(s)"
 fi
 
 SHA=$(sha256sum "$IMAGE" | cut -d ' ' -f 1)

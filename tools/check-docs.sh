@@ -23,7 +23,7 @@ fail()
 echo ":: Checking internal links"
 
 links=0
-for file in README.md THIRD_PARTY.md NOTICE TODO.md CHANGELOG.md \
+for file in README.md THIRD_PARTY.md NOTICE TODO.md CHANGELOG.md AGENTS.md \
     docs/*.md docs/guide/*.md docs/reference/*.md; do
     [ -f "$file" ] || continue
     directory=${file%/*}

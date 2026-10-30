@@ -105,7 +105,11 @@ landfill. It does not make that hardware trustworthy. See
 
 ## Contributing
 
-[TODO list](TODO.md) · [Changelog](CHANGELOG.md) · [Testing](docs/reference/testing.md)
+[Notes for agents and contributors](AGENTS.md) · [TODO list](TODO.md) · [Changelog](CHANGELOG.md) · [Testing](docs/reference/testing.md)
+
+`AGENTS.md` is the orientation file: project conventions, which files to change
+for a given task, and the gotchas that produce code which looks correct and
+breaks on real hardware.
 
 ```sh
 make check    # syntax and shellcheck
