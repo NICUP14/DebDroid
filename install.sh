@@ -73,6 +73,12 @@ mkdir -p "$DEBDROID_SDHOME" \
 cp -r ./command "$DEBDROID_SDHOME"
 cp -r ./debdroid/* "$DEBDROID_SDHOME"
 
+# Installs the device test suite, so problems can be diagnosed on the device
+if [ -d ./tests ]; then
+    mkdir -p "$DEBDROID_SDHOME"/tests
+    cp ./tests/assert.sh ./tests/device.sh ./tests/device_probe.sh "$DEBDROID_SDHOME"/tests
+fi
+
 if [ -e "$DEBDROID_SDHOME"/img/debian.img ]; then
     step "Keeping the existing debian image: \"$DEBDROID_SDHOME/img/debian.img\""
 else
