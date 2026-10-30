@@ -80,6 +80,13 @@ Options:
       Resizes the debian image to the specified size.
       Example: debdroid.sh resize 5G
 
+  self-update [--check] [--rollback] [--offline FILE]
+      Updates DebDroid itself. To update debian instead, run
+      'debdroid.sh command update'.
+
+  uninstall [--image] [--all] [--yes]
+      Removes DebDroid. The debian image is kept unless --image is given.
+
 Notes:
   - Unrecognized options are treated the same as the 'run' option."
 
@@ -133,6 +140,18 @@ elif [ "$DEBDROID_OPT" = "command" ]; then
 # Handles the "resize" option
 elif [ "$DEBDROID_OPT" = "resize" ]; then
     sh "$DEBDROID_SDHOME"/debdroid_resize.sh "$DEBDROID_SUBOPT"
+
+# Handles the "self-update" option
+# NOTE: Named apart from "command update", which updates debian rather than
+#       debdroid itself. The two were too easy to confuse.
+elif [ "$DEBDROID_OPT" = "self-update" ]; then
+    shift
+    sh "$DEBDROID_SDHOME"/debdroid_update.sh "$@"
+
+# Handles the "uninstall" option
+elif [ "$DEBDROID_OPT" = "uninstall" ]; then
+    shift
+    sh "$DEBDROID_SDHOME"/debdroid_uninstall.sh "$@"
 
 # Handles the unknown option case
 # Functions the same as "debdroid.sh run"
