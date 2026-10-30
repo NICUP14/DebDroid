@@ -53,6 +53,21 @@ Options:
       Runs the default Debdroid environment.
       If COMMAND is provided, it executes that command inside the environment.
       If no command is given, an interactive shell is started.
+      The environment is stopped again as soon as the session exits.
+
+  start
+      Starts the environment in the background and leaves it running.
+      Servers started inside it keep running after the terminal is closed.
+
+  attach [COMMAND...]
+      Opens a session in the background environment started by 'start'.
+      Attaching is fast, as the environment is already mounted.
+
+  stop
+      Stops the background environment and unmounts everything.
+
+  status
+      Reports whether an environment is running.
 
   list
       Lists all command scripts in the command directory.
@@ -70,6 +85,16 @@ Notes:
 
 # Handles the "run" option
 elif [ "$DEBDROID_OPT" = "run" ]; then
+    shift
+    debdroid_run "$@"
+
+# Handles the background environment options
+# NOTE: The manager reads the mode from the environment, which keeps its
+#       positional arguments compatible with earlier releases.
+elif [ "$DEBDROID_OPT" = "start" ] || [ "$DEBDROID_OPT" = "stop" ] ||
+        [ "$DEBDROID_OPT" = "status" ] || [ "$DEBDROID_OPT" = "attach" ]; then
+    DEBDROIDMGR_MODE=$DEBDROID_OPT
+    export DEBDROIDMGR_MODE
     shift
     debdroid_run "$@"
 

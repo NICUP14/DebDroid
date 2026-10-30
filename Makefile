@@ -7,7 +7,7 @@
 #   make all      Both of the above
 
 SCRIPTS = install.sh $(wildcard debdroid/*.sh) $(wildcard command/*.sh) \
-          $(wildcard tests/*.sh) bin/debinit
+          $(wildcard tests/*.sh) $(wildcard boot/*.sh) bin/debinit
 
 .POSIX:
 .PHONY: all check syntax shellcheck test test-device help
@@ -30,10 +30,15 @@ syntax:
 	done
 	@echo 'syntax: ok'
 
-# SC1090/SC1091 are the sourced files shellcheck cannot follow at parse time
+# Excluded checks, each a deliberate pattern rather than an oversight:
+#   SC1090/SC1091  sourced files shellcheck cannot follow at parse time
+#   SC2016         single-quoted awk programs, which must not expand
+#   SC2153         distinct variables it mistakes for typos of each other
+#   SC2059         the test helper forwarding a printf format it was handed
 shellcheck:
 	@if command -v shellcheck > /dev/null 2>&1; then \
-	    shellcheck -s sh -e SC1090,SC1091 $(SCRIPTS) && echo 'shellcheck: ok'; \
+	    shellcheck -s sh -e SC1090,SC1091,SC2016,SC2153,SC2059 $(SCRIPTS) \
+	        && echo 'shellcheck: ok'; \
 	else \
 	    echo 'shellcheck: not installed, skipping'; \
 	fi

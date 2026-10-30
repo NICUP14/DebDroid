@@ -464,6 +464,90 @@ else
         "$fsck_output"
 fi
 
+t_section "Background environment"
+
+# This is the claim the project is built on: a server started inside the
+# environment has to keep running after the terminal that started it is gone.
+if sh "$DEBDROID_SDHOME"/debdroid.sh start > "$session_log" 2>&1; then
+    t_ok "the background environment starts"
+else
+    t_no "the background environment starts" "$($BUSYBOX tail -n 20 "$session_log")"
+fi
+
+if [ -f "$DEBDROID_PID" ]; then
+    t_ok "the supervisor recorded its pid"
+    t_info "supervisor" "$($BUSYBOX cat "$DEBDROID_PID")"
+else
+    t_no "the supervisor recorded its pid" "Expected it at: $DEBDROID_PID"
+fi
+
+status_output=$(sh "$DEBDROID_SDHOME"/debdroid.sh status 2>&1)
+case "$status_output" in
+    *"running"*) t_ok "status reports the environment as running" ;;
+    *)           t_no "status reports the environment as running" "$status_output" ;;
+esac
+
+if sh "$DEBDROID_SDHOME"/debdroid.sh attach true > "$session_log" 2>&1; then
+    t_ok "attaching to the environment works"
+else
+    t_no "attaching to the environment works" "$($BUSYBOX tail -n 20 "$session_log")"
+fi
+
+# Quoting has to survive the attach path too, which goes through nsenter
+attach_quoting=$(sh "$DEBDROID_SDHOME"/debdroid.sh attach \
+    printf '%s|' 'a b' "it's" '$HOME' '*' 2>/dev/null | $BUSYBOX tail -n 1)
+t_eq "arguments survive the attach path" "a b|it's|\$HOME|*|" "$attach_quoting"
+
+# Starts a daemon through one attach and looks for it through another, which is
+# exactly what a terminal being closed does to a server
+sh "$DEBDROID_SDHOME"/debdroid.sh attach \
+    sh -c 'nohup sleep 300 > /dev/null 2>&1 &' > /dev/null 2>&1
+if sh "$DEBDROID_SDHOME"/debdroid.sh attach \
+        sh -c 'ps -eo args 2>/dev/null | grep -q "[s]leep 300"' > /dev/null 2>&1; then
+    t_ok "a daemon outlives the session that started it"
+else
+    t_no "a daemon outlives the session that started it" \
+        "This is the behaviour background mode exists to provide."
+fi
+
+if sh "$DEBDROID_SDHOME"/debdroid.sh stop > "$session_log" 2>&1; then
+    t_ok "the background environment stops"
+else
+    t_no "the background environment stops" "$($BUSYBOX tail -n 20 "$session_log")"
+fi
+
+if [ -f "$DEBDROID_PID" ]; then
+    t_no "the pid file is removed on stop" "It was left at: $DEBDROID_PID"
+else
+    t_ok "the pid file is removed on stop"
+fi
+
+if ( $BUSYBOX flock -n 9 ) 9> "$DEBDROID_LOCK" 2>/dev/null; then
+    t_ok "the lock is released after stopping"
+else
+    t_no "the lock is released after stopping" \
+        "Something from the background environment is still running."
+fi
+
+leftover=$($BUSYBOX awk -v env="$DEBDROID_ENV" \
+    '$2 == env || index($2, env "/") == 1 { print $2 }' /proc/self/mounts)
+if [ -z "$leftover" ]; then
+    t_ok "stopping left no mounts behind"
+else
+    t_no "stopping left no mounts behind" "Reboot before starting again." "$leftover"
+fi
+
+dev_after=$($BUSYBOX ls -1a /dev 2>/dev/null)
+t_eq "the host's /dev survived background mode too" "$dev_before" "$dev_after"
+
+if fsck_output=$("$DEBDROID_BIN"/e2fsck -fn "$DEBDROID_IMG" 2>&1); then
+    t_ok "the debian image is clean after background mode"
+else
+    t_no "the debian image is clean after background mode" \
+        "Repair it: \"$DEBDROID_BIN/e2fsck -f $DEBDROID_IMG\"" \
+        "$fsck_output"
+fi
+
 $BUSYBOX rm -f "$session_log"
 
 t_summary

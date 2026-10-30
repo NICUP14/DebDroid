@@ -10,5 +10,11 @@ export DEBDROID_HOME=/data/local/debdroid
 export DEBDROID_BIN="$DEBDROID_HOME/bin"
 export DEBDROID_LIB="$DEBDROID_HOME/lib"
 export DEBDROID_ENV="$DEBDROID_HOME/mnt"
-export DEBDROID_LOCK="$DEBDROID_ENV.lock" # Must match the lock path in debdroid_mgr.sh
+# The following three must match the paths derived in debdroid_mgr.sh
+export DEBDROID_LOCK="$DEBDROID_ENV.lock"
+export DEBDROID_PID="$DEBDROID_ENV.pid"
+export DEBDROID_LOG="$DEBDROID_ENV.log"
+
+export DEBDROID_SWAP="$DEBDROID_HOME"/swapfile
+export DEBDROID_WAKELOCK=debdroid
 export BUSYBOX="$DEBDROID_HOME"/bin/busybox

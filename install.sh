@@ -79,6 +79,12 @@ if [ -d ./tests ]; then
     cp ./tests/assert.sh ./tests/device.sh ./tests/device_probe.sh "$DEBDROID_SDHOME"/tests
 fi
 
+# Installs the boot hook, which the user copies into service.d to enable it
+if [ -d ./boot ]; then
+    mkdir -p "$DEBDROID_SDHOME"/boot
+    cp ./boot/* "$DEBDROID_SDHOME"/boot
+fi
+
 if [ -e "$DEBDROID_SDHOME"/img/debian.img ]; then
     step "Keeping the existing debian image: \"$DEBDROID_SDHOME/img/debian.img\""
 else
