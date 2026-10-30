@@ -1,0 +1,58 @@
+DebDroid
+Copyright (c) 2025-2026 Nicolae Petri
+Licensed under the MIT License (see LICENSE).
+
+This product bundles the following third-party software. Full provenance,
+including checksums and build recipes, is recorded in THIRD_PARTY.md and
+provenance/manifest.
+
+--------------------------------------------------------------------------------
+BusyBox  (bin/busybox, bin/ssl_helper)
+Copyright (c) Erik Andersen, Rob Landley, Denys Vlasenko and others
+Licensed under the GNU General Public License, version 2 (licenses/GPL-2.0.txt).
+
+The bundled android build is maintained by meefik:
+    https://github.com/meefik/busybox
+
+Source for the exact version shipped is available from the upstream project
+above. Build instructions for reproducing it are in
+docs/reference/building.md.
+
+--------------------------------------------------------------------------------
+e2fsprogs  (bin/e2fsck, bin/resize2fs)
+Copyright (c) Theodore Ts'o and others
+Licensed under the GNU General Public License, version 2 (licenses/GPL-2.0.txt).
+The e2fsprogs libraries are additionally available under the LGPL and BSD
+licenses; see the upstream source for the per-file terms.
+
+The bundled build comes from the LineageOS android port:
+    https://github.com/LineageOS/android_external_e2fsprogs
+    commit 8045c66384370e8539576c9cdc073674737c3ffc
+
+Build instructions are in package/bin/e2fsprogs/Compile.md, which pins both the
+upstream commit and the NDK version, so the binaries can be reproduced.
+
+--------------------------------------------------------------------------------
+Swap support
+
+DebDroid's swap handling (command/swap.sh and the CONFIG_ENV_SWAP options) is an
+independent implementation of the mechanism demonstrated by janithcooray's
+Lineage OS SWAP mod:
+    https://github.com/janithcooray/lin_os_swap_mod
+
+No code from that module is included. It is credited for establishing which
+approach works on android, and for its boot sentinel, which DebDroid's boot hook
+adopts. See THIRD_PARTY.md for details.
+
+--------------------------------------------------------------------------------
+Recommended applications
+
+DebDroid does not bundle any application. The terminal emulators and keyboard
+it recommends are Apache-2.0 licensed (licenses/Apache-2.0.txt) and are
+installed from F-Droid:
+
+    Term One Plus                 com.termoneplus
+    Android Terminal Emulator     jackpal.androidterm
+    Hacker's Keyboard             org.pocketworkstation.pckeyboard
+
+Copyright for those applications remains with their respective authors.

@@ -9,7 +9,23 @@ Warnings are shown in purple and errors in red. Set `NO_COLOR=1` to disable colo
 
 ## System reboot due to XFCE4
 
-Newer releases of the XFCE4 desktop cause known problems within DebDroid environments. The issue is due to the power‑manager plugin, which assumes a traditional PC setup. This mismatch triggers excessive memory consumption, which can quickly exhaust the limited RAM on Android devices, resulting in a system reboot. To resolve this issue, users should look for a method that increases the available swap space of the device. Magisk-rooted users can simply flash the [`lin_os_swap_mod.zip`](../apk/lin_os_swap_mod.zip) archive in the module section of the Magisk app.
+Newer releases of the XFCE4 desktop cause known problems within DebDroid environments. The issue is due to the power‑manager plugin, which assumes a traditional PC setup. This mismatch triggers excessive memory consumption, which can quickly exhaust the limited RAM on Android devices, resulting in a system reboot.
+
+Two things fix this, and DebDroid now handles both:
+
+```bash
+su
+# Give the device room to breathe
+sh /sdcard/debdroid/command/swap.sh create 2G
+# Then start the desktop, which disables the power-manager plugin for you
+sh /sdcard/debdroid/debdroid.sh start
+sh /sdcard/debdroid/debdroid.sh attach sh /sdcard/debdroid/command/vncserver.sh
+```
+
+Set `CONFIG_ENV_SWAP=yes` in `/sdcard/debdroid/debdroid_mgr.sh` so each session enables the swapfile.
+
+> [!NOTE]
+> Earlier versions of this guide pointed at a third-party Magisk swap module. That is no longer needed: DebDroid manages its own swapfile with the bundled tools. The module remains credited in [Third-Party Components](../THIRD_PARTY.md).
 
 
 ## The environment is already in use

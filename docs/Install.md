@@ -24,8 +24,13 @@ Additional requirements:
 
 Before starting, make sure you have these apps installed on your device:
 
-- [Terminal Emulator](../apk/TerminalEmulator.apk) - lets you access Android's command-line interface.
-- [Hacker's Keyboard](../apk/HackersKeyboard.apk) - an advanced keyboard that makes typing commands easier.
+- [Term One Plus](https://f-droid.org/packages/com.termoneplus/) - lets you access Android's command-line interface.
+- [Hacker's Keyboard](https://f-droid.org/packages/org.pocketworkstation.pckeyboard/) - an advanced keyboard that makes typing commands easier.
+
+These install from F-Droid, which builds each app from source and signs the
+result, so you are not trusting a binary handed to you by this project. See
+[Third-Party Components](../THIRD_PARTY.md) for why, and
+[Signatures](reference/signatures.md) for how to check what you installed.
 - [Root Explorer](https://play.google.com/store/apps/details?id=com.speedsoftware.rootexplorer&hl=en-US) - lets you browse and manage Android files.
 
 Alternatively, you can use a free alternative to Root Explorer, such as [Explorer](https://play.google.com/store/apps/details?id=com.speedsoftware.explorer) or [MiXplorer](https://play.google.com/store/apps/details?id=com.mixplorer.silver).

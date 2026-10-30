@@ -39,6 +39,37 @@ jobs:
       - name: Run the host test suite
         run: make test
 
+  provenance:
+    name: Provenance and licensing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Fails on a changed checksum, and on any binary nobody wrote down
+      - name: Verify the manifest
+        run: make provenance
+
+      # A redistributed GPL binary obliges us to ship the license text
+      - name: License texts are present
+        run: |
+          status=0
+          for file in licenses/GPL-2.0.txt licenses/Apache-2.0.txt NOTICE THIRD_PARTY.md; do
+              if [ ! -s "$file" ]; then
+                  echo "::error::Missing or empty: $file"
+                  status=1
+              fi
+          done
+          exit $status
+
+      # The repository must not start shipping applications again
+      - name: No bundled applications
+        run: |
+          if find . -name '*.apk' -not -path './.git/*' | grep .; then
+              echo "::error::APKs are installed from F-Droid, not committed here."
+              exit 1
+          fi
+          echo "ok: no bundled apks"
+
   constraints:
     name: Hard constraints
     runs-on: ubuntu-latest

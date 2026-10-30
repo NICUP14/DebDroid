@@ -10,14 +10,15 @@ SCRIPTS = install.sh $(wildcard debdroid/*.sh) $(wildcard command/*.sh) \
           $(wildcard tests/*.sh) $(wildcard boot/*.sh) bin/debinit
 
 .POSIX:
-.PHONY: all check syntax shellcheck test test-device help
+.PHONY: all check syntax shellcheck provenance test test-device help
 
-all: check test
+all: check provenance test
 
 help:
 	@echo 'make check        Syntax check and shellcheck every script'
+	@echo 'make provenance   Verify every bundled binary against the manifest'
 	@echo 'make test         Run the host test suite'
-	@echo 'make all          Both of the above'
+	@echo 'make all          All of the above'
 	@echo 'make test-device  Print how to run the device suite'
 
 check: syntax shellcheck
@@ -42,6 +43,10 @@ shellcheck:
 	else \
 	    echo 'shellcheck: not installed, skipping'; \
 	fi
+
+# Fails on a changed checksum or a binary nobody wrote down
+provenance:
+	@sh tools/verify-provenance.sh
 
 test:
 	@sh tests/run.sh

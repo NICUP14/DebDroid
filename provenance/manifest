@@ -1,0 +1,25 @@
+# DebDroid provenance manifest
+#
+# Every file in the repository that is not source code is recorded here. CI
+# verifies each checksum and fails on any binary that has no entry, so the set
+# cannot grow again without being written down.
+#
+# Tiers, in decreasing order of what can be proven about a file:
+#
+#   A  Built from source in this repository
+#   B  Built from a documented, pinned recipe
+#   C  Third-party prebuilt, provenance recorded but not reproducible here
+#
+# Tier C is what the "open source but ships closed blobs" criticism is about,
+# and the goal is to empty it. See docs/reference/third-party.md.
+#
+# Format, one record per line, fields separated by "|":
+#   path | tier | sha256 | bytes | license | upstream | recipe-or-notes
+
+bin/busybox | C | 6b23c93ba7ac1c2db0d3a4e5a691a86c50113d4f6bae21b40ed6e0c9d0edccfa | 1589328 | GPL-2.0-only | https://github.com/meefik/busybox | Prebuilt android aarch64 static build by meefik. Being replaced by a self-build, see docs/reference/building.md.
+bin/ssl_helper | C | 3271457c1bf5a013a4d89cbdf36e8bf21ce767cd00ccde5fc63871e6aca89d0b | 686496 | GPL-2.0-only | https://github.com/meefik/busybox | TLS helper for busybox wget. Becomes unnecessary once busybox is built with its own ssl_client applet.
+bin/e2fsck | B | 3829a06ff74dfad121d0efe0ccf27ede544e87584cfdb6bb54584f948bc8b307 | 2967552 | GPL-2.0-only | https://github.com/LineageOS/android_external_e2fsprogs | Built per package/bin/e2fsprogs/Compile.md, commit 8045c66384370e8539576c9cdc073674737c3ffc, NDK r27d.
+bin/resize2fs | B | 2f45c158e9a89e56cbe1518c9dac187a694898f5b5a51bcf756ff3d27533366d | 2416400 | GPL-2.0-only | https://github.com/LineageOS/android_external_e2fsprogs | Built per package/bin/e2fsprogs/Compile.md, commit 8045c66384370e8539576c9cdc073674737c3ffc, NDK r27d.
+bin/test_random | A | 85a5cccfb6fd47a9a65e53fdfabb253e9aae6a4310fb3d3ac47b3d277ab7b57a | 70992 | MIT | this repository | Built from package/test/test_random.
+lib/librandom.so | A | d9ad622b124ad130bfd8f6e5f9d56fa9b6d36cd90a1a4cd069b77c51673fcec2 | 70280 | MIT | this repository | Built from package/lib/librandom. Targets glibc, not android: it is preloaded inside debian.
+lib/libarc4random.so | A | 9ea0d0c603bf03a250cea0855ed9e530b4f4a36ce3005908d89da20e23634ebe | 69664 | MIT | this repository | Built from package/lib/libarc4random. Targets glibc, not android.
