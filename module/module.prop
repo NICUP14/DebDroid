@@ -1,0 +1,7 @@
+id=debdroid
+name=DebDroid
+version=v1.2.6
+versionCode=10206
+author=NICUP14
+description=Runs a real Debian userland on rooted Android devices. Installs DebDroid and optionally starts it at boot. Does not modify /system.
+updateJson=https://raw.githubusercontent.com/NICUP14/DebDroid/main/module/update.json

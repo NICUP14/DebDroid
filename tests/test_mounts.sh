@@ -1,6 +1,9 @@
 #!/bin/sh
 # test_mounts.sh: Checks the mount-point listing used to unmount an environment
 
+# shellcheck disable=SC2034
+# BUSYBOX and DEBDROIDMGR_ENV are read by the function loaded below.
+
 . "$TESTS_DIR"/assert.sh
 test_setup_colors
 

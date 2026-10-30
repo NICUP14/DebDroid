@@ -34,6 +34,7 @@ if ! applets=$("$BUSYBOX" --list 2>/dev/null); then
 fi
 
 missing=
+# shellcheck disable=SC2086 # intentional word splitting over the applet list
 for applet in $REQUIRED; do
     echo "$applets" | grep -qx "$applet" || missing="$missing $applet"
 done

@@ -56,6 +56,7 @@ while IFS='|' read -r path tier sha bytes license upstream notes; do
     fi
 
     # Every field has to be filled in, or the record documents nothing
+    # shellcheck disable=SC2154 # "value" is assigned by the eval on the next line
     for field in tier sha license upstream; do
         eval "value=\$$field"
         if [ -z "$value" ]; then

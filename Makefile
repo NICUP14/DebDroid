@@ -7,7 +7,8 @@
 #   make all      Both of the above
 
 SCRIPTS = install.sh $(wildcard debdroid/*.sh) $(wildcard command/*.sh) \
-          $(wildcard tests/*.sh) $(wildcard boot/*.sh) bin/debinit
+          $(wildcard tests/*.sh) $(wildcard boot/*.sh) $(wildcard tools/*.sh) \
+          $(wildcard package/*.sh) $(wildcard module/*.sh) bin/debinit
 
 .POSIX:
 .PHONY: all check syntax shellcheck provenance test test-device help

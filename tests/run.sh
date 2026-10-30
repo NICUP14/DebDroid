@@ -7,9 +7,10 @@
 #
 # Usage: sh tests/run.sh [name...]   (names select individual test files)
 
-TESTS_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+TESTS_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 export TESTS_DIR
-export REPO_DIR=${TESTS_DIR%/*}
+REPO_DIR=${TESTS_DIR%/*}
+export REPO_DIR
 
 # Builds a scratch directory that mimics an installed DebDroid
 # Sets "TEST_TMP" to its path, removed by the trap below

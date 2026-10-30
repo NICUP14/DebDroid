@@ -117,9 +117,15 @@ else
         exit 1
     fi
 
-    step "Enter a size for the debian image (e.g. 5G, 512M), or press Enter to keep the default:"
-    read -r size
-    [ -n "$size" ] && sh "$DEBDROID_SDHOME"/debdroid_resize.sh "$size"
+    # NOTE: A module flash has no usable stdin, so the prompt is skipped there
+    #       and the default size is kept; the resizer can change it later.
+    if [ -z "$DEBDROID_NONINTERACTIVE" ]; then
+        step "Enter a size for the debian image (e.g. 5G, 512M), or press Enter to keep the default:"
+        read -r size
+        [ -n "$size" ] && sh "$DEBDROID_SDHOME"/debdroid_resize.sh "$size"
+    else
+        step "Keeping the default image size, resize it with \"debdroid.sh resize\""
+    fi
 fi
 
 section "Successfully installed DebDroid v$DEBDROID_VER!"

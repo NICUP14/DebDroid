@@ -2,6 +2,9 @@
 # test_frontend.sh: Checks that the frontend and manager pass commands through
 # unchanged, which is what keeps quotes, spaces and globs intact
 
+# shellcheck disable=SC2034
+# BUSYBOX is read by the product scripts this file runs, not here.
+
 . "$TESTS_DIR"/assert.sh
 test_setup_colors
 

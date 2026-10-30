@@ -25,7 +25,7 @@
 
 set -e
 
-PACKAGE_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+PACKAGE_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 REPO_DIR=${PACKAGE_DIR%/*}
 BUILD_DIR=${BUILD_DIR:-$REPO_DIR/out}
 
@@ -34,7 +34,11 @@ NDK_API=${NDK_API:-21}
 BUSYBOX_VERSION=${BUSYBOX_VERSION:-1.36.1}
 E2FSPROGS_COMMIT=8045c66384370e8539576c9cdc073674737c3ffc
 
-ARCHES=${*:-arm64 armhf amd64 i386}
+if [ $# -gt 0 ]; then
+    ARCHES=$*
+else
+    ARCHES='arm64 armhf amd64 i386'
+fi
 
 # Maps a debian architecture onto the toolchain triples both halves need
 # Sets "ndk_triple", "ndk_arch" and "glibc_cc"
@@ -149,6 +153,7 @@ build_preload()
 
 mkdir -p "$BUILD_DIR"
 
+# shellcheck disable=SC2086 # intentional word splitting over the arch list
 for arch in $ARCHES; do
     echo
     echo "================ $arch ================"

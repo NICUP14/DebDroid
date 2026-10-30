@@ -1,6 +1,9 @@
 #!/bin/sh
 # test_lib.sh: Checks the shared helpers in debdroid_lib.sh
 
+# shellcheck disable=SC1003
+# A lone backslash is deliberate test data for shell_quote.
+
 . "$TESTS_DIR"/assert.sh
 test_setup_colors
 

@@ -5,6 +5,9 @@
 # environment, and acting on a wrong pid would signal an unrelated process, so
 # the validation around it is covered here in detail.
 
+# shellcheck disable=SC2154
+# supervisor_pid is set by read_supervisor, loaded from the product script.
+
 . "$TESTS_DIR"/assert.sh
 test_setup_colors
 
