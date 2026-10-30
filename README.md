@@ -1,89 +1,136 @@
-# DebDroid - Debian On Android
+# DebDroid — Debian on Android
 
-> [!IMPORTANT]
-> Previous versions (v1.0 and v1.1) contain critical security bugs and missing functionality. Users are strongly encouraged to update DebDroid to the latest version (v1.2). The update keeps your existing debian image, see the [installation guide](docs/Install.md) for details.
+Turn an old, rooted Android phone into a real Debian machine. Not an emulator
+and not a rebuilt userland: actual Debian, running actual Debian packages.
 
-DebDroid repurposes your old, unused Android devices into compact Debian workstations. It offers a lightweight sandboxed Linux environment suitable for many workloads traditionally assigned to Raspberry Pi and other single-board computers. Since it runs on top of native Android, you get a full Debian userspace without requiring additional hardware or a dedicated Linux installation, making it an attractive, plug-and-play solution for developers and sysadmins who need a portable, low-maintenance server on hand.
+A spare phone already has a CPU, RAM, storage, a battery that doubles as a UPS,
+Wi-Fi and a screen. DebDroid makes it usable as a small server or workstation
+without flashing anything or losing Android.
 
-Check out the [photo gallery](docs/Gallery.md)!
+![neofetch running in a terminal](res/cli-neofetch.jpg)
 
-## DebDroid is not a Chroot Script
+## What you can do with it
 
-Although it uses `chroot` internally, DebDroid's architecture is closer to a lightweight container environment than a traditional chroot script. It acts as a lightweight runtime layer for Debian on Android, assembling an isolated filesystem view, injecting compatibility fixes, shipping its own userspace tools, and bootstrapping the environment before starting the user's session.
+**Run a server.** SSH, a web server, Pi-hole, Syncthing, a CI runner, a VPN
+endpoint. It keeps running when you close the terminal, and can start again
+after a reboot.
 
-In practice, it sits between Android and Debian, providing a compatibility and management layer rather than simply executing a chroot command.
+**Run a desktop.** XFCE4 over VNC, with Firefox, an office suite and an editor.
+See the [gallery](docs/gallery.md).
+
+**Develop on it.** Compilers, interpreters and debuggers — the real ones from
+the Debian archive, not ports.
+
+**Keep using Android.** Debian runs alongside it. No dual-boot, no flashing,
+nothing lost.
+
+## How it compares
+
+| | DebDroid | Termux | proot-distro | Linux Deploy |
+| --- | --- | --- | --- | --- |
+| Needs root | **Yes** | No | No | Yes |
+| Real glibc userland | **Yes** | No (bionic) | Yes | Yes |
+| Debian packages run unmodified | **Yes** | No (rebuilt) | Yes | Yes |
+| Syscall overhead | **None** | None | Yes (ptrace) | None |
+| Android version floor | **5.0** | 7.0 | 7.0 | varies |
+| Hardware access (`/dev`, `/sys`) | **Yes** | Limited | Limited | Yes |
+| Runs servers in the background | Yes | Yes | Yes | Yes |
+| Android tools reachable from Linux | **Yes** | Via addon app | No | Partly |
+
+**Root is the trade.** It is what buys a real glibc userland with no emulation,
+so nearly the whole Debian archive works unmodified. If you do not want to root
+your device, Termux is the better answer and that is not a criticism of it.
+
+The Android 5.0 floor is the other reason this exists: current Termux needs
+Android 7, which leaves the 2012–2015 devices — the ones most likely to be
+sitting in a drawer — without a good option.
+
+## Getting started
+
+**[Start here →](docs/guide/README.md)**
+
+1. [Will it work on my phone?](docs/guide/requirements.md)
+2. [Install it](docs/guide/install.md) — about ten minutes
+3. [First steps](docs/guide/first-steps.md)
+
+Requires a rooted `arm64-v8a` device running Android 5.0 or later, and 1 GB of
+free space (5 GB is comfortable).
+
+## How it works
+
+DebDroid is a runtime layer, not a chroot script. It builds an isolated
+filesystem view in a private mount namespace, holds a lock that two sessions
+cannot defeat, preloads compatibility libraries that fix what Android's kernel
+does not provide, ships its own userspace tools, and bootstraps the environment
+before handing over a session.
 
 ```txt
 Android
- ↓ 
-DebDroid Runtime 
-  • BusyBox
-  • e2fsprogs
-  • Compatibility libraries
-  • Bootstrap/init script
+ ↓
+DebDroid runtime
+  • BusyBox and e2fsprogs
+  • Compatibility libraries (preloaded)
+  • Bootstrap script
   • Filesystem and namespace manager
  ↓
 Debian
 ```
 
-DebDroid combines filesystem management, mount namespace isolation, Android compatibility shims and environment bootstrapping into a single runtime layer.
+The [reference documentation](docs/reference/README.md) covers the design,
+including the two constraints that shape it: only a mount namespace is
+available on Android devices, and the image stays ext2 because old kernels
+reject modern ext4 features.
 
-## DebDroid is not Termux
+## Documentation
 
-Unlike Termux or Proot, which rely on Android-compiled binaries or user-space emulation, DebDroid runs a real Debian userspace directly on Android. It ships its own utilities, filesystem tools, compatibility libraries and bootstrap scripts, while linking key Android filesystems into the Debian environment. The result is a self-contained Debian runtime capable of running Debian software directly on Android.
+**[Guides](docs/guide/README.md)** — step by step, assumes nothing.
 
-## Features
+**[Reference](docs/reference/README.md)** — architecture, session lifecycle,
+mounts, configuration, every command, and the security model.
 
-- Small and portable.
-- No external dependencies.
-- Runs a minimal Debian Linux userland in an isolated chroot environment.
-- Dynamically assembles the runtime environment.
-- Uses private mount namespaces (`unshare`) to isolate mountpoints.
-- Mounts key Android system paths to provide near-native Linux functionality.
-- Supports `/dev` overlayfs, creating a writable layer over device files without modifying the real `/dev`.
+**[Third-party components](THIRD_PARTY.md)** — where every bundled binary came
+from, with checksums. DebDroid asks for root, so this is written down rather
+than left to trust.
 
-**Linux+Android on the same device:** DebDroid manages a persistent Debian runtime inside Android while keeping the underlying Android OS intact. This lets your run Linux workloads side-by-side with your regular Android apps, all without dual-boot, flashing or loss of Android functionality.
+## Security
 
-**Flexible access:** You can interact with DebDroid locally through a terminal emulator, ADB or remotely via SSH, VNC, RDP and many others!
+Most devices old enough to be spare no longer receive security patches, so
+their kernels have known, unpatched holes. **Do not expose one directly to the
+internet, and do not keep anything sensitive on it.** Use a VPN if you need
+remote access.
 
-**Debian environment on a Android device:** DebDroid provides a complete Linux workspace with a wide array of supported utilities so you can perform software development, system‑administration, or other tasks directly on the device without needing a separate computer.
+DebDroid is a good way to get use out of hardware that would otherwise be
+landfill. It does not make that hardware trustworthy. See
+[security](docs/reference/security.md) for the full picture.
 
-**Turn your idle Android devices into a headless server:** Whether you need a web server, CI runner, IoT gateway, or VPN endpoint, an old Android device becomes a self‑contained, energy‑efficient server that you can deploy anywhere without the hassle of wiring, power adapters, or a separate SBC.
+## Contributing
 
-## Disclaimer
+[TODO list](TODO.md) · [Changelog](CHANGELOG.md) · [Testing](docs/reference/testing.md)
 
-The software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement. In no event shall the authors or copyright holders be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
+```sh
+make check    # syntax and shellcheck
+make test     # the host test suite, no device needed
+make all      # both, plus the provenance check
+```
 
-## Warp Zone
-
-The list facilitates easy access to relevant documents of the project.
-
-- [TODO List](TODO.md)
-- [Architecture](docs/Architecture.md)
-- [Security Implications](docs/Security.md)
-- [Installation Guide](docs/Install.md)
-- [Quickstart Guide](docs/Quickstart.md)
-- [Troubleshooting Guide](docs/Troubleshooting.md) 
-- [Photo Gallery](docs/Gallery.md)
-- [Patches](docs/Patches.md)
-
-## Join the Discussions
-
-> [!NOTE]
-> Starting from v1.2, discussions have moved to discord for easier communication with users.
-
-Have questions, ideas, or feedback? Then go ahead and join our **[discord server](https://discord.gg/5aKx85eZc)**!
+On a device, `sh /sdcard/debdroid/tests/device.sh` checks a real install and
+only reads by default. Its output is what a useful bug report contains.
 
 ## Credits
 
-The project wouldn't have existed without:
-
-- [Meefik](https://github.com/meefik) for maintaining the android build of `busybox`.
-- [LineageOS team](https://github.com/LineageOS) for maintaining the android build of `e2fsprogs`.
-- [Janithcooray](https://github.com/janithcooray) for developing the Magisk swap module.
+- [Meefik](https://github.com/meefik) for the android build of `busybox`.
+- [LineageOS](https://github.com/LineageOS) for the android port of `e2fsprogs`.
+- [Janithcooray](https://github.com/janithcooray) for the swap module that
+  showed which approach works on android.
 
 ## License
 
-Copyright © 2025-2026 Nicolae Petri
+Copyright © 2025-2026 Nicolae Petri. MIT licensed; see [LICENSE](LICENSE).
 
-Licensed under the MIT License.
+Some bundled binaries are GPL-2.0; see [NOTICE](NOTICE) and
+[THIRD_PARTY.md](THIRD_PARTY.md).
+
+## Disclaimer
+
+Provided "as is", without warranty of any kind. See [LICENSE](LICENSE) for the
+full text.

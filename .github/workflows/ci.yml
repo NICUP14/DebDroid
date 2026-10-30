@@ -70,6 +70,17 @@ jobs:
           fi
           echo "ok: no bundled apks"
 
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Broken links and jargon creeping into the guide tier both erode the
+      # three-audience split the documentation is organised around
+      - name: Check links and guide vocabulary
+        run: make docs
+
   constraints:
     name: Hard constraints
     runs-on: ubuntu-latest

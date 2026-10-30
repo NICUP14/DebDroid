@@ -11,13 +11,14 @@ SCRIPTS = install.sh $(wildcard debdroid/*.sh) $(wildcard command/*.sh) \
           $(wildcard package/*.sh) $(wildcard module/*.sh) bin/debinit
 
 .POSIX:
-.PHONY: all check syntax shellcheck provenance test test-device help
+.PHONY: all check syntax shellcheck provenance docs test test-device help
 
-all: check provenance test
+all: check provenance docs test
 
 help:
 	@echo 'make check        Syntax check and shellcheck every script'
 	@echo 'make provenance   Verify every bundled binary against the manifest'
+	@echo 'make docs         Check documentation links and guide vocabulary'
 	@echo 'make test         Run the host test suite'
 	@echo 'make all          All of the above'
 	@echo 'make test-device  Print how to run the device suite'
@@ -48,6 +49,11 @@ shellcheck:
 # Fails on a changed checksum or a binary nobody wrote down
 provenance:
 	@sh tools/verify-provenance.sh
+
+# Fails on a broken internal link, a missing redirect stub, or implementation
+# vocabulary creeping into the guide tier
+docs:
+	@sh tools/check-docs.sh
 
 test:
 	@sh tests/run.sh
