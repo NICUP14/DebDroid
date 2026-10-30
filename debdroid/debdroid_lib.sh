@@ -62,9 +62,30 @@ check_arch()
         DEBDROID_ABI=${DEBDROID_ABI%%,*}
     fi
 
+    # NOTE: DEBDROID_ARCH is the debian architecture name, which is what the
+    #       rootfs and binary bundles are published under. It differs from the
+    #       android abi name in every case, so the mapping is explicit.
     case "$DEBDROID_ABI" in
-        arm64-v8a) DEBDROID_ARCH=arm64 ;;
-        *)         DEBDROID_ARCH= ; return 1 ;;
+        arm64-v8a)   DEBDROID_ARCH=arm64 ;;
+        armeabi-v7a) DEBDROID_ARCH=armhf ;;
+        armeabi)     DEBDROID_ARCH=armel ;;
+        x86_64)      DEBDROID_ARCH=amd64 ;;
+        x86)         DEBDROID_ARCH=i386 ;;
+        *)           DEBDROID_ARCH= ; return 1 ;;
+    esac
+}
+
+# Reports whether the installation actually ships binaries for an architecture
+# NOTE: check_arch recognising an abi is not the same as the binaries existing.
+#       Shipping arch-aware scripts before every arch is built would otherwise
+#       fail later with a confusing "cannot execute binary file".
+arch_is_built()
+{
+    [ -n "$DEBDROID_ARCH" ] || return 1
+
+    case "$DEBDROID_ARCH" in
+        arm64) return 0 ;;
+        *)     return 1 ;;
     esac
 }
 
@@ -73,7 +94,15 @@ require_arch()
 {
     if ! check_arch; then
         error "Unsupported architecture: \"$DEBDROID_ABI\"" \
-            "This script only works on arm64-v8a (aarch64)."
+            "DebDroid supports arm64-v8a, armeabi-v7a, x86_64 and x86."
+        exit 1
+    fi
+
+    if ! arch_is_built; then
+        error "No binaries are built for this architecture yet: \"$DEBDROID_ABI\"" \
+            "DebDroid recognises it as debian \"$DEBDROID_ARCH\", but the" \
+            "bundled binaries are arm64 only for now." \
+            "Build them with package/build_all.sh, or follow the issue tracker."
         exit 1
     fi
 }

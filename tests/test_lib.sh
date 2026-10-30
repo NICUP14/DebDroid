@@ -68,17 +68,19 @@ t_section "check_arch maps the android abi"
 #       be exported rather than merely assigned.
 export FAKE_ABI FAKE_ABILIST
 
-FAKE_ABI=arm64-v8a
-check_arch
-t_eq "arm64-v8a maps to arm64" "arm64" "$DEBDROID_ARCH"
+# Each android abi maps onto the debian architecture name that releases and
+# rootfs tarballs are published under, which differs in every single case
+for pair in "arm64-v8a arm64" "armeabi-v7a armhf" "armeabi armel" \
+    "x86_64 amd64" "x86 i386"; do
+    FAKE_ABI=${pair% *}
+    check_arch
+    t_eq "$FAKE_ABI maps to ${pair#* }" "${pair#* }" "$DEBDROID_ARCH"
+done
 
-FAKE_ABI=armeabi-v7a
-t_false "armeabi-v7a is not supported yet" check_arch
+FAKE_ABI=mips64
+t_false "an unknown abi fails" check_arch
 check_arch
-t_eq "an unsupported abi clears the arch" "" "$DEBDROID_ARCH"
-
-FAKE_ABI=x86_64
-t_false "x86_64 is not supported yet" check_arch
+t_eq "an unknown abi clears the arch" "" "$DEBDROID_ARCH"
 
 # Very old devices report only the abi list, so the first entry is used
 FAKE_ABI=
@@ -89,6 +91,25 @@ t_eq "falls back to the abi list" "arm64" "$DEBDROID_ARCH"
 FAKE_ABI=
 FAKE_ABILIST=
 t_false "no abi at all fails" check_arch
+
+t_section "arch_is_built separates recognised from shipped"
+
+# NOTE: Recognising an abi is not the same as having binaries for it. Without
+#       this split the scripts would accept an armhf device and then fail with
+#       "cannot execute binary file" somewhere much less obvious.
+FAKE_ABI=arm64-v8a
+check_arch
+t_true "arm64 has binaries" arch_is_built
+
+for abi in armeabi-v7a x86_64 x86 armeabi; do
+    FAKE_ABI=$abi
+    check_arch
+    t_false "$abi is recognised but not built yet" arch_is_built
+done
+
+FAKE_ABI=mips64
+check_arch 2>/dev/null
+t_false "an unknown abi is not built either" arch_is_built
 
 t_section "find_busybox locates a usable binary"
 
