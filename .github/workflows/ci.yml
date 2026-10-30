@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Syntax and shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck and dash
+        run: sudo apt-get update && sudo apt-get install -y shellcheck dash
+
+      - name: Syntax check
+        run: make syntax
+
+      # dash is the closest widely available stand-in for android's sh
+      - name: Syntax check with dash
+        run: |
+          status=0
+          for file in install.sh debdroid/*.sh command/*.sh tests/*.sh bin/debinit; do
+              dash -n "$file" || { echo "dash rejected $file"; status=1; }
+          done
+          exit $status
+
+      - name: Shellcheck
+        run: make shellcheck
+
+  test:
+    name: Host test suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the host test suite
+        run: make test
+
+  constraints:
+    name: Hard constraints
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Android devices support no namespace other than the mount namespace, so
+      # a stray --pid or --net flag would break the project on real hardware.
+      - name: Only the mount namespace is used
+        run: |
+          if grep -nE '\b(unshare|nsenter)\b[^|;&]*--(pid|net|uts|ipc|user|cgroup|time|all)\b' \
+              install.sh debdroid/*.sh command/*.sh tests/*.sh bin/debinit; then
+              echo "::error::Only the mount namespace is supported on android devices."
+              exit 1
+          fi
+          echo "ok: no namespace flag other than --mount"
+
+      # Old phone kernels reject the features a modern mke2fs enables by
+      # default, producing an image the device cannot mount at all.
+      - name: No unpinned ext4 image creation
+        run: |
+          if grep -nE 'mke2fs|mkfs\.ext' install.sh debdroid/*.sh command/*.sh tests/*.sh |
+                  grep -vE 'mkfs\.ext2' | grep -E 'ext4|-t[[:space:]]+ext'; then
+              echo "::error::Image creation must stay ext2, or pin every feature explicitly."
+              exit 1
+          fi
+          echo "ok: no ext4 image creation"
+
+      # The version is the single source of truth and must match a release tag
+      - name: Version matches the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version=$(sed -n "s/^export DEBDROID_VER='\(.*\)'$/\1/p" debdroid/debdroid_env.sh)
+          tag=${GITHUB_REF#refs/tags/v}
+          if [ "$version" != "$tag" ]; then
+              echo "::error::DEBDROID_VER is $version but the tag is v$tag."
+              exit 1
+          fi
+          echo "ok: version $version matches tag v$tag"
