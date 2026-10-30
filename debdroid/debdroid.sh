@@ -1,7 +1,7 @@
 #!/system/bin/sh
 
 # Checks for the required debdroid files
-for file in debdroid_env.sh debdroid_ui.sh; do
+for file in debdroid_env.sh debdroid_ui.sh debdroid_lib.sh; do
     if [ ! -f /sdcard/debdroid/"$file" ]; then
         echo "Error: Missing required file: /sdcard/debdroid/$file" >&2
         exit 1
@@ -12,14 +12,21 @@ done
 . /sdcard/debdroid/debdroid_env.sh
 # shellcheck disable=SC1091
 . /sdcard/debdroid/debdroid_ui.sh
+# shellcheck disable=SC1091
+. /sdcard/debdroid/debdroid_lib.sh
+require_busybox
 setup_colors
 
-debdroid_run() {
-    # shellcheck disable=SC2068
-    sh "$DEBDROID_SDHOME"/debdroid_mgr.sh "$DEBDROID_IMG" "$DEBDROID_ENV" "$DEBDROID_BIN" "$DEBDROID_LIB" $@
+# Runs the manager, passing the user's command through unchanged
+# NOTE: "$@" keeps each argument intact, so quotes and spaces survive
+debdroid_run()
+{
+    sh "$DEBDROID_SDHOME"/debdroid_mgr.sh "$DEBDROID_IMG" "$DEBDROID_ENV" "$DEBDROID_BIN" "$DEBDROID_LIB" "$@"
 }
 
-list_scripts() {
+# Prints the name of every command script in the given directory
+list_scripts()
+{
     for script in "$1"/*.sh; do
         [ -f "$script" ] || continue # Ensures that the script exists
         script=${script##*/}
@@ -64,8 +71,7 @@ Notes:
 # Handles the "run" option
 elif [ "$DEBDROID_OPT" = "run" ]; then
     shift
-    # shellcheck disable=SC2068
-    debdroid_run $@
+    debdroid_run "$@"
 
 # Handles the "list" option
 elif [ "$DEBDROID_OPT" = "list" ]; then
@@ -97,9 +103,7 @@ elif [ "$DEBDROID_OPT" = "command" ]; then
         exit 1
     fi
 
-    # shellcheck disable=SC2068
-    sh "$DEBDROID_SDHOME"/debdroid_mgr.sh "$DEBDROID_IMG" "$DEBDROID_ENV" "$DEBDROID_BIN" "$DEBDROID_LIB" \
-        sh "$CMD"
+    debdroid_run sh "$CMD"
 
 # Handles the "resize" option
 elif [ "$DEBDROID_OPT" = "resize" ]; then
@@ -108,6 +112,5 @@ elif [ "$DEBDROID_OPT" = "resize" ]; then
 # Handles the unknown option case
 # Functions the same as "debdroid.sh run"
 else
-    # shellcheck disable=SC2068
-    debdroid_run $@
+    debdroid_run "$@"
 fi

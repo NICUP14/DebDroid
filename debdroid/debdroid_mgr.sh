@@ -10,17 +10,19 @@ CONFIG_ENV_FSCK=yes
 CONFIG_ENV_SHMMAX=268435456 # 250MB
 CONFIG_ENV_DNSSERVER=1.1.1.1 # Fallback dns server (Cloudflare)
 
-# Loads the output helpers, which live next to this script
+# Loads the output helpers and shared functions, which live next to this script
 case "$0" in
-    */*) DEBDROIDMGR_UI="${0%/*}"/debdroid_ui.sh ;;
-    *)   DEBDROIDMGR_UI=./debdroid_ui.sh ;;
+    */*) DEBDROIDMGR_DIR="${0%/*}" ;;
+    *)   DEBDROIDMGR_DIR=. ;;
 esac
-if [ ! -f "$DEBDROIDMGR_UI" ]; then
-    echo "Error: Missing required file: $DEBDROIDMGR_UI" >&2
-    exit 1
-fi
-# shellcheck disable=SC1090
-. "$DEBDROIDMGR_UI"
+for file in debdroid_ui.sh debdroid_lib.sh; do
+    if [ ! -f "$DEBDROIDMGR_DIR/$file" ]; then
+        echo "Error: Missing required file: $DEBDROIDMGR_DIR/$file" >&2
+        exit 1
+    fi
+    # shellcheck disable=SC1090
+    . "$DEBDROIDMGR_DIR/$file"
+done
 
 # Mounts a filesystem under the environment, unless it is already mounted
 # Sets "mount_output" to the mount command's output
@@ -284,38 +286,13 @@ if [ $# -eq 0 ]; then
 fi
 
 # Checks for popular busybox install locations
-if [ -z "$BUSYBOX" ]; then
-    if [ -x /sbin/busybox ]; then
-        BUSYBOX=/sbin/busybox
-    elif [ -x /system/bin/busybox ]; then
-        BUSYBOX=/system/bin/busybox
-    elif [ -x /system/xbin/busybox ]; then
-        BUSYBOX=/system/xbin/busybox
-    elif [ -x /data/local/bin/busybox ]; then
-        BUSYBOX=/data/local/bin/busybox
-    else
-        error "Cannot locate the busybox binary." \
-            "Manually set it using the \$BUSYBOX variable."
-        exit 1
-    fi
-fi
+require_busybox
 
 # Enables colored output
 setup_colors
 
-# Checks for a matching architecture
-ARCH=$(getprop ro.product.cpu.abi)
-if [ "$ARCH" != "arm64-v8a" ]; then
-    error "Unsupported architecture: \"$ARCH\"" \
-        "This script only works on arm64-v8a (aarch64)."
-    exit 1
-fi
-
-# Check if the user has root permissions 
-if [ "$(id -u)" -ne 0 ]; then
-    error "Missing required super-user permissions."
-    exit 1
-fi
+require_arch
+require_root
 
 # Checks for missing arguments
 if [ $# -lt 4 ]; then
@@ -332,10 +309,6 @@ DEBDROIDMGR_LIB=$4
 DEBDROIDMGR_LOCK="$DEBDROIDMGR_ENV".lock
 shift 4
 
-# NOTE: Remains unquoted as it has to preserve flags when passed to chroot
-# shellcheck disable=SC2124
-DEBDROIDMGR_EXEC=$@
-
 # Pass 1: Sets up the private mount namespace
 if [ -z "$DEBDROIDMGR_MNT" ]; then
     # Records the mount namespace id
@@ -345,16 +318,20 @@ if [ -z "$DEBDROIDMGR_MNT" ]; then
     # Runs pass 2 inside a private mount namespace, with the lock file open as fd 9
     # NOTE: Cleanup happens in pass 2, the environment's mounts are invisible from here
     # NOTE: POSIX leaves it unspecified whether fds opened by a bare "exec" reach other programs
-    # shellcheck disable=SC2086
-    $BUSYBOX unshare --mount sh "$0" "$DEBDROIDMGR_IMG" "$DEBDROIDMGR_ENV" "$DEBDROIDMGR_BIN" "$DEBDROIDMGR_LIB" $DEBDROIDMGR_EXEC \
+    # NOTE: "$@" keeps the user's command intact, so quotes and spaces survive the hop
+    $BUSYBOX unshare --mount sh "$0" "$DEBDROIDMGR_IMG" "$DEBDROIDMGR_ENV" "$DEBDROIDMGR_BIN" "$DEBDROIDMGR_LIB" "$@" \
         9> "$DEBDROIDMGR_LOCK"
 
     unset DEBDROIDMGR_MNT
 
 # Pass 2: Sets up the linux filesystem
 else
-    # Defines the chroot command
-    : "${DEBDROIDMGR_EXEC:=/bin/su}"
+    # Defines the chroot command, defaulting to a login shell
+    [ $# -eq 0 ] && set -- /bin/su
+
+    # Quotes the command, as chroot runs it through a single "su -c" string
+    shell_quote "$@"
+    DEBDROIDMGR_EXEC=$DEBDROID_QUOTED
 
     # Ensures that further modifications run in a private mount namespace
     if in_host_namespace; then
@@ -381,7 +358,7 @@ else
 
     # Spawns a clean login session without inheriting env variables
     # NOTE: Resets the umask, as Android root shells often use 077, which makes new files private
-    step "Running chroot command: \"$DEBDROIDMGR_EXEC\""
+    step "Running chroot command: \"$*\""
     echo
     $BUSYBOX chroot "$DEBDROIDMGR_ENV" /bin/su - -c "umask 022 && sh /debdroid/bin/debinit && $DEBDROIDMGR_EXEC"
 fi
