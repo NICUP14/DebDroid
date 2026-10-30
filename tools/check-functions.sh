@@ -46,12 +46,14 @@ for script in debdroid/*.sh command/*.sh install.sh; do
     # NOTE: Matched by basename anywhere in the file rather than by parsing the
     #       "." lines, because the manager sources through a loop over a list of
     #       filenames, so there is no literal path on the "." line to read.
-    for sourced in $(grep -ohE 'debdroid_[a-z]+\.sh' "$script" 2>/dev/null |
-            sort -u); do
+    for candidate in debdroid/debdroid_*.sh; do
+        [ -f "$candidate" ] || continue
+        sourced=${candidate##*/}
         [ "$sourced" = "$name" ] && continue
-        [ -f debdroid/"$sourced" ] || continue
+        grep -q "$sourced" "$script" 2>/dev/null || continue
+
         visible="$visible
-$(grep -hE '^[a-z_][a-z0-9_]*\(\)' debdroid/"$sourced" | sed 's/().*//')"
+$(grep -hE '^[a-z_][a-z0-9_]*\(\)' "$candidate" | sed 's/().*//')"
     done
 
     # The two shared libraries are sourced together by every entry point, and

@@ -664,6 +664,12 @@ shift 4
 : "${DEBDROID_WAKELOCK:=debdroid}"
 : "${DEBDROID_SWAP:=${DEBDROIDMGR_BIN%/*}/swapfile}"
 
+# Filled in by read_supervisor, which lives in debdroid_lib.sh
+# NOTE: Declared here so the contract is visible: every use below is only valid
+#       after a successful read_supervisor call.
+supervisor_pid=
+supervisor_mnt=
+
 # Selects what to do with the environment, defaulting to a foreground session
 : "${DEBDROIDMGR_MODE:=run}"
 
