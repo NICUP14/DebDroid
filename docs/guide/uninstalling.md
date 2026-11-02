@@ -1,4 +1,4 @@
-[← Guides](README.md)
+[← Docs](../README.md)
 
 # Uninstall
 
@@ -43,9 +43,9 @@ silently.
 
 That is deliberate, and worth understanding:
 
-- **"A session is using the debian image"** — exit it, or run
+- **"A session is using the debian image"**: exit it, or run
   `debdroid.sh stop`.
-- **"The debian image is still mounted"** — reboot, then uninstall. It will not
+- **"The debian image is still mounted"**: reboot, then uninstall. It will not
   delete the mount folder while Debian is mounted there, because that would
   delete the contents of your Debian install instead of an empty folder.
 

@@ -1,10 +1,10 @@
-[← Reference](README.md)
+[← Docs](../README.md)
 
 # Patches
 
 Debian software expects a Linux kernel that behaves in ways android's does not.
 DebDroid closes the gap with preloaded libraries and a bootstrap script, rather
-than by modifying the debian installation — so an `apt upgrade` cannot undo the
+than by modifying the debian installation, so an `apt upgrade` cannot undo the
 fixes.
 
 ## Preloaded compatibility libraries
@@ -29,8 +29,8 @@ Anything that needs randomness at startup then fails outright, which includes
 
 Reading `/dev/urandom` is appropriate here. On Linux and android the kernel
 seeds `/dev/urandom` from the same pool `getrandom` uses, so the quality is the
-same once the pool is initialised — which, on a device that has finished
-booting, it is.
+same once the pool is initialised, which on a device that has finished booting
+it is.
 
 The one thing this does not reproduce is `getrandom`'s blocking behaviour on a
 freshly booted system with no entropy. DebDroid sessions start well after boot,
@@ -54,7 +54,7 @@ Turning off `CONFIG_DEBDROID_LIB` disables all of this.
 
 Android restricts network sockets to members of group `3003`, called `inet`.
 Debian knows nothing about this, so a user created normally cannot use the
-network at all — `ping` and `apt` both fail with permission errors that do not
+network at all: `ping` and `apt` both fail with permission errors that do not
 mention groups.
 
 The bootstrap creates the group, and `command/user.sh` adds new users to it.

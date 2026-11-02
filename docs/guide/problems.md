@@ -1,10 +1,10 @@
-[← Guides](README.md)
+[← Docs](../README.md)
 
 # Something Went Wrong
 
 Find the message you are seeing, or the thing that is happening, and follow the
-fix. If nothing here matches, run the checker — it inspects your whole setup
-and reports anything that looks wrong:
+fix. If nothing here matches, run the checker. It inspects your whole setup and
+reports anything that looks wrong:
 
 ```bash
 su
@@ -76,8 +76,8 @@ A program inside Debian would not stop, so the install is still mounted.
 **Reboot the device before using DebDroid again.** Starting it again while this
 is the case can damage the Debian install.
 
-DebDroid names the program that held it open, which is worth noting if it keeps
-happening — it usually means a service needs stopping before you exit.
+DebDroid names the program that held it open. If the same name keeps coming up,
+that service needs stopping before you exit.
 
 ## Failed to repair the debian image
 
@@ -131,7 +131,7 @@ Re-running is safe: it keeps your Debian install and your settings.
 
 ## My server stops when I close the terminal
 
-That is how `run` works — it stops Debian when the session ends.
+That is how `run` works: it stops Debian when the session ends.
 
 Use background mode instead, which is what servers need:
 
@@ -228,8 +228,8 @@ works. Starting the session again usually fixes it.
 
 DebDroid marks problems two ways:
 
-- **`Warning:`** in purple — something failed, but it kept going.
-- **`Error:`** in red — it could not continue, and cleaned up after itself.
+- **`Warning:`** in purple means something failed, but it kept going.
+- **`Error:`** in red means it could not continue, and cleaned up after itself.
 
 Set `NO_COLOR=1` to turn colours off.
 

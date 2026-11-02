@@ -1,4 +1,4 @@
-[← Reference](README.md)
+[← Docs](../README.md)
 
 # Architecture
 
@@ -114,7 +114,7 @@ debian creates private and break packages that expect otherwise.
 **The image is ext2 deliberately, and should stay that way.**
 
 Old phone kernels reject many ext4 feature flags, and a modern `mke2fs` enables
-several by default — `metadata_csum`, `64bit`, `orphan_file` and others —
+several by default (`metadata_csum`, `64bit`, `orphan_file` and others),
 producing an image the target devices cannot mount at all.
 
 This is partly enforced by construction: busybox's `mkfs.ext2` applet can only
@@ -124,7 +124,7 @@ why CI fails the build on any ext4 image creation.
 
 If ext4 were ever offered it would need the standalone `mke2fs` with an
 explicitly pinned, minimal feature set and every unsupported feature negated,
-never the tool's defaults — and the bundled `e2fsck` would have to understand
+never the tool's defaults. The bundled `e2fsck` would also have to understand
 whatever the image carries.
 
 If the goal is crash safety rather than features, the minimal step is ext3:

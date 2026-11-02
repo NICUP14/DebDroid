@@ -1,4 +1,4 @@
-[← Reference](README.md)
+[← Docs](../README.md)
 
 # Output Conventions
 

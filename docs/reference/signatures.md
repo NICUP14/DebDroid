@@ -1,4 +1,4 @@
-[← Reference](README.md)
+[← Docs](../README.md)
 
 # Signatures
 
@@ -12,8 +12,8 @@ signature is valid, and refuses to replace an installed app with one signed by
 a different key.
 
 So a matching fingerprint means **"same publisher as before"**. It does not
-mean "safe", and it does not mean "the author you had in mind" — only that the
-key is the same one as last time.
+mean "safe", and it does not mean "the author you had in mind". It means only
+that the key is the same one as last time.
 
 That is still useful. It is what stops a modified build from silently replacing
 a genuine one.
@@ -25,7 +25,7 @@ itself. The binary is traceable to a public build log rather than to someone's
 upload, and for many apps the build is reproducible, so independent parties can
 confirm the binary matches the source.
 
-A binary committed to a git repository — which is what DebDroid used to ship —
+A binary committed to a git repository, which is what DebDroid used to ship,
 offers none of that. You would be trusting this project, and this project had
 nothing to show you.
 
@@ -60,7 +60,7 @@ what a good case and a bad case look like.
 
 **The terminal emulator checked out.** `TerminalEmulator.apk` was
 `jackpal.androidterm` v1.0.70 from 2015, and its signature block was named
-`META-INF/JACKPAL_.RSA` — the upstream author's own key, matching what the
+`META-INF/JACKPAL_.RSA`, the upstream author's own key, matching what the
 project published. Nothing was wrong with it; it was removed because an app
 store is a better delivery channel than a git repository.
 
@@ -75,7 +75,7 @@ store is a better delivery channel than a git repository.
 - Its signature block was a generic `CERT.RSA` rather than a named author key.
 
 None of that proves it was malicious. It does mean nobody could say where the
-file came from — and a keyboard sees every keystroke on the device, including
+file came from, and a keyboard sees every keystroke on the device, including
 the password you type at `su`. That is reason enough.
 
 **The lesson is the pattern, not the file:** a package name that looks right

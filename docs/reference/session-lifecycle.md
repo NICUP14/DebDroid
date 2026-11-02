@@ -1,4 +1,4 @@
-[← Reference](README.md)
+[← Docs](../README.md)
 
 # Session Lifecycle
 
@@ -32,7 +32,7 @@
    a grace period.
 3. Unmounts everything under the environment, read from `/proc/self/mounts` in
    reverse order so nested mounts go first.
-4. Unmounts the image itself, never lazily — a lazy unmount would hide a still
+4. Unmounts the image itself, never lazily. A lazy unmount would hide a still
    busy image and let the next session mount it again and corrupt it.
 
 ## Background session
@@ -48,7 +48,7 @@ instead of running a command: it writes its pid and namespace id to `mnt.pid`,
 runs the bootstrap once, and blocks.
 
 `attach` then enters that namespace with `nsenter --mount --target <pid>` and
-chroots, skipping the check, the mounts and the bootstrap entirely — which is
+chroots, skipping the check, the mounts and the bootstrap entirely, which is
 why attaching is near-instant compared to a fresh `run`.
 
 `stop` signals the supervisor, whose existing traps do all the teardown. There

@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="res/icon/web/icon-512.png" width="112" alt="DebDroid icon">
+
 # DebDroid
 
 **Real Debian on a rooted Android phone.**
@@ -14,7 +16,7 @@ Android keeps working. Nothing is flashed and nothing is lost.
 [![shell](https://img.shields.io/badge/shell-POSIX%20sh-89e051?style=flat-square)](AGENTS.md)
 [![license](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
 
-[**Get started**](docs/guide/README.md) · [Guides](docs/guide/README.md) · [Reference](docs/reference/README.md) · [Changelog](CHANGELOG.md)
+[**Get started**](docs/README.md) · [Gallery](docs/gallery.md) · [Changelog](CHANGELOG.md) · [Contributing](AGENTS.md)
 
 <img src="res/cli-neofetch.jpg" width="620" alt="neofetch running in a terminal">
 
@@ -96,7 +98,7 @@ about 2000 lines of POSIX shell, with no daemon and no app required.
 Two constraints shape the design. Only a mount namespace is available on
 Android devices, and the image stays ext2 because old kernels reject modern
 ext4 features. Both came out of testing on real phones, not from a preference.
-[The reference docs](docs/reference/README.md) cover what follows from them.
+[The reference docs](docs/README.md#reference) cover what follows from them.
 
 ## Security
 

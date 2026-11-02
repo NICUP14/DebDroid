@@ -1,4 +1,4 @@
-[← Reference](README.md)
+[← Docs](../README.md)
 
 # Building the Bundled Binaries
 
@@ -83,8 +83,8 @@ docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 ### Note on busybox's own tools
 
 busybox provides `mke2fs` and `tune2fs`, but **no `e2fsck` and no
-`resize2fs`** — its `fsck` applet is only a front-end wrapper. Those two
-binaries therefore cannot be dropped.
+`resize2fs`**. Its `fsck` applet is only a front-end wrapper, so those two
+binaries cannot be dropped.
 
 ## e2fsprogs
 

@@ -1,4 +1,4 @@
-[← Guides](README.md)
+[← Docs](../README.md)
 
 # First Steps
 
@@ -39,8 +39,8 @@ neofetch
 If `apt update` fails to reach anything, see
 [ping or apt says permission denied](problems.md#ping-or-apt-says-permission-denied).
 
-Anything in the Debian archive works here — the real package, not a rebuilt
-one. That is the point of DebDroid.
+Anything in the Debian archive works here, and you get the real package rather
+than a rebuilt one.
 
 ## Make yourself a user
 
@@ -52,8 +52,8 @@ su
 sh /sdcard/debdroid/debdroid.sh command user
 ```
 
-It asks for a name and a password, and puts the user in the groups it needs —
-including the one Android requires before any program can use the network,
+It asks for a name and a password, then puts the user in the groups it needs.
+That includes the one Android requires before any program can use the network,
 which is easy to miss when doing it by hand.
 
 Then, inside a session:
@@ -84,9 +84,9 @@ su
 sh /sdcard/debdroid/tests/device.sh
 ```
 
-This reads your setup and reports anything wrong — missing programs, a damaged
-Debian install, kernel features your device lacks. It changes nothing, so it is
-safe to run whenever. Run it now so you know what a healthy result looks like.
+This reads your setup and reports anything wrong: missing programs, a damaged
+Debian install, features your device lacks. It changes nothing, so it is safe
+to run whenever. Run it now so you know what a healthy result looks like.
 
 ## Where things are
 
@@ -103,7 +103,7 @@ between Android and Debian freely.
 
 ## What next
 
-- **A server you can reach from your laptop** — [connect from your computer](remote-access.md)
-- **A full desktop** — [run a desktop](desktop.md)
-- **Running out of space** — [manage storage](storage.md)
-- **Keeping it running after you close the terminal** — [keep it running](keep-it-running.md)
+- **A server you can reach from your laptop:** [connect from your computer](remote-access.md)
+- **A full desktop:** [run a desktop](desktop.md)
+- **Running out of space:** [manage storage](storage.md)
+- **Keeping it running after you close the terminal:** [keep it running](keep-it-running.md)

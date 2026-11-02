@@ -46,7 +46,7 @@ project did not keep a changelog before 1.2.6.
 
 - **The `/dev` overlay never mounted.** `upperdir` was on a tmpfs while
   `workdir` was on the ext2 image, and the kernel requires both on the same
-  filesystem, so it failed every time and silently used the bind fallback — an
+  filesystem, so it failed every time and silently used the bind fallback: an
   advertised feature that had never once run. A private tmpfs was also added
   between the overlay and the bind mount, so sharing android's real `/dev` is
   now a last resort rather than the normal path.
@@ -55,7 +55,7 @@ project did not keep a changelog before 1.2.6.
   them behind in the running system.
 - **Writes into the image could escape through a symlink.** `etc/resolv.conf`,
   `etc/hosts` and `etc/ld.so.preload` were truncated in place, so an image
-  shipping `resolv.conf` as an absolute symlink — which systemd-resolved does —
+  shipping `resolv.conf` as an absolute symlink (which systemd-resolved does)
   had the write land on android's real `/etc`.
 - **The user's command lost its quoting.** It crossed three hops unquoted, so
   `apt install 'foo bar'` split into two arguments and `*` expanded against the

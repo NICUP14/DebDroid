@@ -1,4 +1,4 @@
-[← Guides](../README.md)
+[← Docs](../../README.md)
 
 # Recipes
 
@@ -10,14 +10,14 @@ terminal.
 
 ## Network
 
-- **[Pi-hole](pihole.md)** — block ads for every device on your network.
-- **[Syncthing](syncthing.md)** — sync files between your devices, no cloud.
-- **[WireGuard](wireguard.md)** — reach your home network from anywhere.
+- **[Pi-hole](pihole.md)**: block ads for every device on your network.
+- **[Syncthing](syncthing.md)**: sync files between your devices, no cloud.
+- **[WireGuard](wireguard.md)**: reach your home network from anywhere.
 
 ## Development
 
-- **[Git server](gitea.md)** — host your own repositories.
-- **[CI runner](ci-runner.md)** — run builds on hardware you already own.
+- **[Git server](gitea.md)**: host your own repositories.
+- **[CI runner](ci-runner.md)**: run builds on hardware you already own.
 
 ## Each recipe follows the same shape
 

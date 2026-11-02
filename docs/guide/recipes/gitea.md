@@ -52,7 +52,7 @@ su - git -c 'GITEA_WORK_DIR=/var/lib/gitea /usr/local/bin/gitea web \
 ```
 
 Open `http://<phone-address>:3000` and complete the setup. Choose **SQLite**
-as the database — it is the right choice on a phone, and avoids running a
+as the database. It is the right choice on a phone, and avoids running a
 separate database server.
 
 Afterwards, tighten the config directory:
@@ -81,11 +81,11 @@ Put the start command in `/sdcard/debdroid/command/gitea.sh` and run it after
 
 ## If it didn't work
 
-- **Killed during setup** — out of memory. Set up swap and try again.
-- **Port 3000 refused** — check it is running, and that the phone is awake.
-- **Slow web interface** — normal on older hardware. The git operations
+- **Killed during setup**: out of memory. Set up swap and try again.
+- **Port 3000 refused**: check it is running, and that the phone is awake.
+- **Slow web interface**: normal on older hardware. The git operations
   themselves are usually fine; it is the UI that feels slow.
-- **Out of space** — repositories grow. [Resize the install](../storage.md), or
+- **Out of space**: repositories grow. [Resize the install](../storage.md), or
   move `/var/lib/gitea` onto `/sdcard`.
 
 > [!NOTE]

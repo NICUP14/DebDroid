@@ -1,9 +1,9 @@
-[← Guides](README.md)
+[← Docs](../README.md)
 
 # Run a Desktop
 
 A real Linux desktop on the phone, which you use from another device over VNC.
-Firefox, an office suite, an editor — see the [gallery](../gallery.md).
+Firefox, an office suite, an editor. See the [gallery](../gallery.md).
 
 ## What you'll end up with
 
@@ -44,8 +44,8 @@ sh /sdcard/debdroid/debdroid.sh attach sh /sdcard/debdroid/command/vncserver.sh
 ```
 
 The first run installs the desktop, which takes a while and downloads a lot.
-It asks you to set a VNC password — eight characters maximum, which is a VNC
-limitation.
+It asks you to set a VNC password. Eight characters is the maximum, which is a
+VNC limitation rather than ours.
 
 When it finishes it prints where to connect:
 
@@ -55,8 +55,8 @@ When it finishes it prints where to connect:
 
 ## Connect
 
-Install a VNC client — RealVNC, TigerVNC and Remmina all work — and connect to
-the address it printed, using the password you set.
+Install a VNC client (RealVNC, TigerVNC and Remmina all work), then connect to
+the address it printed using the password you set.
 
 ## Change the resolution
 
@@ -87,12 +87,12 @@ handles it so you do not have to.
 
 ## If it didn't work
 
-- **The phone rebooted** — out of memory. Set up swap, above.
-- **Black screen on connect** — the session failed to start. Look in
+- **The phone rebooted**: out of memory. Set up swap, above.
+- **Black screen on connect**: the session failed to start. Look in
   `~/.vnc/*.log` inside a session.
-- **Connection refused** — check it is running with `debdroid.sh status`, and
+- **Connection refused**: check it is running with `debdroid.sh status`, and
   that you used port 5901 (display `:1`).
-- **It stopped when you closed the terminal** — you used `run` instead of
+- **It stopped when you closed the terminal**: you used `run` instead of
   `start`.
 
 ---

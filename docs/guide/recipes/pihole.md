@@ -41,8 +41,8 @@ which interface to use, pick the wireless one.
 
 > [!NOTE]
 > The installer will try to use systemd, which does not run here. If it
-> complains about `systemctl`, let it finish — the next step starts the
-> services directly.
+> complains about `systemctl`, let it finish. The next step starts the services
+> directly.
 
 **3. Start the services:**
 
@@ -79,12 +79,12 @@ service lighttpd start
 
 ## If it didn't work
 
-- **Queries don't arrive** — the phone is asleep. Check
+- **Queries don't arrive**: the phone is asleep. Check
   `debdroid.sh status` shows `Wakelock: held`.
-- **Works, then stops overnight** — same cause. Keep the device plugged in.
-- **The installer failed on systemd** — expected; start the services with
+- **Works, then stops overnight**: same cause. Keep the device plugged in.
+- **The installer failed on systemd**: expected; start the services with
   `service` as above.
-- **Nothing resolves anywhere on the network** — set your router's DNS back to
+- **Nothing resolves anywhere on the network**: set your router's DNS back to
   automatic, then debug with the phone's address set manually on one device.
 
 > [!WARNING]

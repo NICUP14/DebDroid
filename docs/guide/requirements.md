@@ -1,4 +1,4 @@
-[← Guides](README.md)
+[← Docs](../README.md)
 
 # Will It Work on My Phone?
 
@@ -41,7 +41,7 @@ getprop ro.product.cpu.abi
 getprop ro.build.version.release
 ```
 
-Android 5.0 (released 2014) is the floor. Newer is fine — DebDroid runs on
+Android 5.0 (released 2014) is the floor. Newer is fine, and DebDroid runs on
 Android 14 too.
 
 ## 4. Is there enough free space?
@@ -58,7 +58,7 @@ df -h /data
 | --- | --- | --- |
 | A terminal | To type commands | [Term One Plus](https://f-droid.org/packages/com.termoneplus/) |
 | A better keyboard | Phone keyboards lack Ctrl, Tab and arrow keys | [Hacker's Keyboard](https://f-droid.org/packages/org.pocketworkstation.pckeyboard/) |
-| A file manager with root | To unzip the download | [MiXplorer](https://play.google.com/store/apps/details?id=com.mixplorer.silver) or similar |
+| A file manager with root | Only for the manual install, to unzip the download | [MiXplorer](https://play.google.com/store/apps/details?id=com.mixplorer.silver) or similar |
 
 These install from F-Droid, an app store that builds each app from its source
 code and signs the result. That is a stronger guarantee than a file handed to

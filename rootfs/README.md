@@ -38,7 +38,7 @@ anchored in a key rather than in the transport.
 
 That is a **stronger** anchor than this manifest, which anyone with push access
 to this repository could rewrite. `build.sh` gets the benefit already, because
-`debootstrap` verifies against it at build time — but that happens on a
+`debootstrap` verifies against it at build time. But that happens on a
 maintainer's machine, not on the device.
 
 Carrying it through to the device needs a signature verifier, which busybox does
@@ -49,7 +49,7 @@ about checksums in a repository not being signatures.
 ## Why tarballs rather than images
 
 A tarball carries no filesystem. The image is created on the device by
-busybox's `mkfs.ext2`, which can only produce ext2 — so a modern `mke2fs`
+busybox's `mkfs.ext2`, which can only produce ext2, so a modern `mke2fs`
 cannot put features in it that old phone kernels refuse to mount.
 
 A prebuilt image skips that safeguard, which is why an `IMAGE` entry has to

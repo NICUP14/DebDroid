@@ -1,4 +1,4 @@
-[← Reference](README.md)
+[← Docs](../README.md)
 
 # Mounts
 
@@ -55,7 +55,7 @@ subdirectories of one tmpfs (`mnt/dev-ovl/upper` and `mnt/dev-ovl/work`).
 > [!NOTE]
 > Until v1.2.6 the upper directory was a tmpfs while the work directory was on
 > the ext2 image. The kernel rejects that combination, so the overlay never
-> once mounted and every session silently used the bind fallback — a listed
+> once mounted and every session silently used the bind fallback: a listed
 > feature that had never run.
 
 The upper directory is mode **755**, not 700: an overlay takes its mode from
@@ -64,8 +64,8 @@ user inside the chroot.
 
 ### 2. Private tmpfs
 
-If overlayfs is unavailable, or the kernel refuses a tmpfs as an upper layer —
-which older kernels do — a plain tmpfs is mounted at `/dev` and the needed
+If overlayfs is unavailable, or the kernel refuses a tmpfs as an upper layer
+(which older kernels do), a plain tmpfs is mounted at `/dev` and the needed
 nodes are copied in with `cp -a`, which recreates a device node rather than
 copying its contents.
 
@@ -89,7 +89,7 @@ created **after** `/dev` is mounted, under the environment.
 ## `/apex`
 
 Android 10 moved bionic and its linker into `/apex`. Without it, android's own
-command-line tools — `am`, `settings`, `svc`, `dumpsys` — cannot run inside the
+command-line tools (`am`, `settings`, `svc`, `dumpsys`) cannot run inside the
 chroot on a modern device, because their linker is missing.
 
 Bind-mounting it is what makes those reachable from debian, which is an

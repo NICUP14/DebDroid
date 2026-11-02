@@ -1,4 +1,4 @@
-[← Reference](README.md)
+[← Docs](../README.md)
 
 # Integrity
 
@@ -18,8 +18,8 @@ Every fetch follows the same order:
 
 Nothing is made executable before verification, and nothing is unpacked before
 verification. A mismatch aborts and leaves the existing installation
-**completely untouched** — a partly applied update is the one outcome worse
-than a failed one.
+**completely untouched**. A partly applied update is the one outcome worse than
+a failed one.
 
 ## Where the checksums come from
 
@@ -38,7 +38,8 @@ The rule that follows is the important one:
 ### Mirror checksums are still used
 
 Most mirrors do publish a checksum beside the artifact, and DebDroid fetches it
-where an entry records one. It is not redundant — it does a different job:
+where an entry records one. It is not redundant, because it does a different
+job:
 
 | Source | Catches |
 | --- | --- |
@@ -57,7 +58,7 @@ rather than in the transport.
 
 That is a stronger guarantee than this repository offers, since anyone with
 push access here could rewrite a checksum. `rootfs/build.sh` already benefits,
-because `debootstrap` verifies against the signed release while building — but
+because `debootstrap` verifies against the signed release while building. But
 that happens on a maintainer's machine, and what reaches the device afterwards
 is a tarball covered only by a checksum recorded here.
 
@@ -106,7 +107,7 @@ there is nothing of Debian's to verify at that point.
 Debian signs the **archive**: `InRelease` is signed by the archive keyring and
 covers the package indices, which in turn cover the `.deb` files. It does not
 sign rootfs tarballs, because a rootfs tarball is not one of Debian's
-artifacts — it is one of ours, assembled from theirs.
+artifacts. It is one of ours, assembled from theirs.
 
 That signature chain is still doing real work, just earlier:
 `rootfs/build.sh` runs `debootstrap`, which verifies the archive signature
@@ -115,8 +116,8 @@ at build time, on a maintainer's machine. What ships afterwards is a file this
 project produced, and only this project can vouch for it.
 
 Verifying the Debian archive **on the device** would only matter for running
-`debootstrap` there, which would need `gpgv` and libgcrypt — `gpgv` being the
-verify-only binary `apt` and `debootstrap` themselves use. That is a much larger
+`debootstrap` there, which would need libgcrypt and `gpgv`, the verify-only
+binary `apt` and `debootstrap` themselves use. That is a much larger
 dependency than an Ed25519 verifier, and it buys nothing for the current design,
 where the device installs a tarball rather than bootstrapping from the archive.
 

@@ -1,4 +1,4 @@
-[← Guides](README.md)
+[← Docs](../README.md)
 
 # Keep It Running
 
@@ -10,7 +10,7 @@ Background mode fixes that. Read this page before setting up any server.
 ## What you'll end up with
 
 Debian running in the background, so anything you start inside it keeps running
-after you close the terminal — and optionally starts again after a reboot.
+after you close the terminal. It can also start again after a reboot.
 
 ## Start it in the background
 
@@ -30,8 +30,7 @@ sh /sdcard/debdroid/debdroid.sh attach
 ```
 
 You get a shell inside Debian. Type `exit` to leave. **Leaving does not stop
-anything** — that is the whole point. You can attach and leave as often as you
-like.
+anything.** You can attach and leave as often as you like.
 
 Attaching is also much faster than `run`, because everything is already set up.
 
@@ -103,9 +102,9 @@ Check it with `sh /sdcard/debdroid/debdroid.sh swap status`.
 Some devices cannot use a swapfile. DebDroid tells you which case you are in
 rather than failing silently:
 
-- **"This kernel does not support swap"** — your device's kernel was built
+- **"This kernel does not support swap"**: your device's kernel was built
   without it. Nothing can be done short of a different kernel.
-- **"A swapfile cannot live on an f2fs filesystem"** — your device formats its
+- **"A swapfile cannot live on an f2fs filesystem"**: your device formats its
   internal storage in a way that does not allow swapfiles. Look for a zram
   module for your root solution instead.
 
@@ -144,11 +143,11 @@ If `status` still reports it running, background mode is working.
 
 ## If it didn't work
 
-- **"A background environment is already running"** — it is already up. Use
+- **"A background environment is already running"**: it is already up. Use
   `attach`, or `stop` first.
-- **"The background environment did not start in time"** — look at
+- **"The background environment did not start in time"**: look at
   `/data/local/debdroid/mnt.log`, which holds the full startup output.
-- **Anything else** — run the checker, which inspects your whole setup:
+- **Anything else**: run the checker, which inspects your whole setup:
   ```bash
   su
   sh /sdcard/debdroid/tests/device.sh

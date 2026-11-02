@@ -1,4 +1,4 @@
-[← Guides](README.md)
+[← Docs](../README.md)
 
 # Update DebDroid
 
@@ -43,7 +43,7 @@ su
 sh /sdcard/debdroid/debdroid.sh self-update --rollback
 ```
 
-Exit every session first — it refuses to replace files while Debian is running,
+Exit every session first. It refuses to replace files while Debian is running,
 because doing so can damage the install.
 
 ## Updating by re-running the installer
@@ -57,8 +57,8 @@ sh install.sh
 ```
 
 It keeps your Debian install, and keeps `environment` and `debdroid_env.sh` if
-you have edited them — the new versions are saved alongside as `.new` so you
-can compare.
+you have edited them. The new versions are saved alongside as `.new` so you can
+compare.
 
 ## Why downloads are checked
 

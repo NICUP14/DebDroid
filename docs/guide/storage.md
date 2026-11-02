@@ -1,4 +1,4 @@
-[← Guides](README.md)
+[← Docs](../README.md)
 
 # Manage Storage
 
@@ -15,7 +15,7 @@ df -h /
 
 ## Make it bigger
 
-Exit Debian first — the resizer refuses to run while it is in use.
+Exit Debian first. The resizer refuses to run while it is in use.
 
 ```bash
 su
@@ -68,10 +68,10 @@ du -sh /var/* | sort -h | tail   # Find what is actually large
 
 ## If it goes wrong
 
-- **"Refusing to resize the debian image while the environment is running"** —
+- **"Refusing to resize the debian image while the environment is running":**
   exit every session first, including background mode (`debdroid.sh stop`).
-- **"Invalid size"** — check the table above.
-- **It ran out of space partway** — the Debian install is unchanged. Free up
+- **"Invalid size":** check the table above.
+- **It ran out of space partway:** the Debian install is unchanged. Free up
   phone storage and try again.
 
 ---

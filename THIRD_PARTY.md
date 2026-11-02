@@ -101,8 +101,8 @@ DebDroid's swap support reimplements what
 does, as `debdroid_swap.sh` plus the `CONFIG_ENV_SWAP*` options.
 
 This is an independent implementation rather than a port: the module ships no
-license file, and the mechanism it uses — `dd`, `mkswap`, `swapon` and a
-sysctl — is ordinary Linux administration rather than creative expression. The
+license file, and the mechanism it uses (`dd`, `mkswap`, `swapon` and a
+sysctl) is ordinary Linux administration rather than creative expression. The
 module is credited for showing which mechanism works on android, and
 particularly for its boot sentinel, which DebDroid's boot hook adopts.
 
@@ -114,8 +114,8 @@ Two details were taken deliberately:
   afterwards, so a failed attempt stands down on the next boot instead of
   repeating itself on a device that may not survive it.
 
-The module's `util.sh` credited several XDA authors — Kingsman44, chainfire,
-ianmacd, someone755 and Zappo — for volume-key menu code used by the Magisk
+The module's `util.sh` credited several XDA authors (Kingsman44, chainfire,
+ianmacd, someone755 and Zappo) for volume-key menu code used by the Magisk
 installer. None of that code is used here; it is recorded so its removal is
 visible rather than silent.
 

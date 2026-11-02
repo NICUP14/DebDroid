@@ -62,7 +62,7 @@ their IDs. Point the shared folder somewhere with space:
 ## How to tell it worked
 
 Create a file in the shared folder on your laptop. It should appear on the
-phone within a few seconds — check from a session with `ls`.
+phone within a few seconds. Check from a session with `ls`.
 
 ## Start it with the environment
 
@@ -78,12 +78,12 @@ starting, or add it to the boot hook.
 
 ## If it didn't work
 
-- **Can't reach the web interface** — the listen address is still
+- **Can't reach the web interface**: the listen address is still
   `127.0.0.1`. See above.
-- **Devices don't find each other** — they need to be on the same network, or
+- **Devices don't find each other**: they need to be on the same network, or
   discovery needs to be enabled. Adding the phone's address manually in the
   other device's settings is the reliable fallback.
-- **Sync stops when the screen goes off** — the device is sleeping. Check
+- **Sync stops when the screen goes off**: the device is sleeping. Check
   `debdroid.sh status` reports the wakelock as held.
-- **Out of space** — [resize the install](../storage.md), or point the folder
+- **Out of space**: [resize the install](../storage.md), or point the folder
   at `/sdcard`, which uses your phone's main storage.

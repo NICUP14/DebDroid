@@ -24,7 +24,7 @@ echo ":: Checking internal links"
 
 links=0
 for file in README.md THIRD_PARTY.md NOTICE TODO.md CHANGELOG.md AGENTS.md \
-    docs/*.md docs/guide/*.md docs/reference/*.md; do
+    docs/*.md docs/guide/*.md docs/guide/recipes/*.md docs/reference/*.md; do
     [ -f "$file" ] || continue
     directory=${file%/*}
     [ "$directory" = "$file" ] && directory=.
@@ -51,16 +51,21 @@ done
 echo "  checked $links link(s)"
 
 echo
-echo ":: Checking the old documentation paths still redirect"
+echo ":: Checking there is one index page, not a tree of them"
 
-# NOTE: These were linked from the public README and from forum posts before the
-#       restructure, so they have to keep resolving rather than 404.
-for stub in docs/Install.md docs/Quickstart.md docs/Troubleshooting.md; do
-    if [ ! -f "$stub" ]; then
-        fail "$stub" "the redirect stub is missing" \
-            "external links still point here"
-    elif ! grep -q 'moved' "$stub"; then
-        fail "$stub" "the stub does not say the page moved"
+# NOTE: docs/README.md is the only index. The per-tier indexes and the redirect
+#       stubs that used to sit beside it were pages whose whole content was
+#       links to other pages, which is a click the reader should not have to
+#       spend. Anything new goes into docs/README.md rather than beside it.
+if [ ! -f docs/README.md ]; then
+    fail "docs/README.md" "the one index page is missing"
+fi
+
+for gone in docs/Install.md docs/Quickstart.md docs/Troubleshooting.md \
+    docs/guide/README.md docs/reference/README.md; do
+    if [ -f "$gone" ]; then
+        fail "$gone" "this index page was removed deliberately" \
+            "link the page itself from docs/README.md instead"
     fi
 done
 
@@ -72,7 +77,7 @@ echo ":: Checking the guides stay free of implementation vocabulary"
 #       concept that needs a plain-language gloss plus a reference link.
 JARGON='chroot mount namespace overlayfs loop device lock file'
 
-for file in docs/guide/*.md; do
+for file in docs/guide/*.md docs/guide/recipes/*.md; do
     [ -f "$file" ] || continue
 
     for term in namespace overlayfs chroot; do
@@ -83,6 +88,29 @@ for file in docs/guide/*.md; do
 done
 
 echo "  vocabulary to keep out of guides: $JARGON"
+
+echo ":: Checking the prose uses no em dashes"
+
+# NOTE: A house style rather than a correctness rule: the em dash reads as
+#       filler here, and a full stop, a colon or parentheses is almost always
+#       clearer. Checked because an unenforced convention drifts back one
+#       sentence at a time.
+# NOTE: Globbed by depth rather than listed by name, so a markdown file added
+#       anywhere is covered without anyone remembering to extend a list. A
+#       leading "*" does not match a dotfile, so .git is skipped for free.
+for file in NOTICE *.md */*.md */*/*.md */*/*/*.md; do
+    [ -f "$file" ] || continue
+
+    # out/ holds built release artifacts, not project prose
+    case "$file" in
+        out/*) continue ;;
+    esac
+
+    if hits=$(grep -n '—' "$file"); then
+        fail "$file" "uses an em dash" "$hits" \
+            "rewrite with a full stop, a colon or parentheses"
+    fi
+done
 
 echo
 if [ "$failed" -eq 0 ]; then

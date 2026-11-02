@@ -1,8 +1,8 @@
-[← Guides](README.md)
+[← Docs](../README.md)
 
 # Install DebDroid
 
-There are two ways. **The first is much easier** — use it unless you have a
+There are two ways. **The first is much easier.** Use it unless you have a
 reason not to.
 
 Check [will it work on my phone?](requirements.md) first.
@@ -27,6 +27,14 @@ and no terminal at all.
 That's it. It installs everything and sets Debian to start automatically after
 each reboot.
 
+The download is small, and Debian itself (about 150 MB) is fetched while the
+module installs. Your phone needs Wi-Fi for that step.
+
+> [!TIP]
+> No usable Wi-Fi on the phone? Download `DebDroid-module-offline.zip` instead.
+> It has Debian inside it, so it installs without a network. The file is much
+> bigger, so get it on a computer and copy it across.
+
 Skip to [check it worked](#check-it-worked).
 
 ---
@@ -36,10 +44,9 @@ Skip to [check it worked](#check-it-worked).
 Use this if you rooted your device some other way, or if you want to see
 exactly what gets installed.
 
-You need a file manager that can extract a zip —
-[MiXplorer](https://play.google.com/store/apps/details?id=com.mixplorer.silver)
-works well — and a terminal app from
-[requirements](requirements.md#apps-youll-want).
+You need two apps for this route: a file manager that can extract a zip, such
+as [MiXplorer](https://play.google.com/store/apps/details?id=com.mixplorer.silver),
+and a terminal app from [requirements](requirements.md#apps-youll-want).
 
 ### 1. Download and extract
 
@@ -62,7 +69,7 @@ sh install.sh
 Grant the root permission when your root app asks for it.
 
 The installer asks how big to make the Debian install. **Press Enter** for the
-default — you can change it later with [resize](storage.md).
+default. You can change it later with [resize](storage.md).
 
 ---
 
@@ -76,8 +83,8 @@ sh /sdcard/debdroid/tests/device.sh
 This inspects the whole setup and reports anything wrong. It changes nothing,
 so it is safe to run any time.
 
-Most lines should say `PASS`. Some `SKIP` lines are normal — they mean your
-device's kernel does not have an optional feature, which DebDroid works around.
+Most lines should say `PASS`. Some `SKIP` lines are normal. They mean your
+device does not have an optional feature, which DebDroid works around.
 
 Now open a session:
 
@@ -97,14 +104,13 @@ You are inside Debian. Type `exit` to leave.
 
 ## If it didn't work
 
-- **`su: not found`** — the device is not rooted, and DebDroid cannot run on
-  it.
-- **`Unsupported architecture`** — see [requirements](requirements.md).
-- **`Missing required file`** — you are in the wrong folder. `cd` to the
+- **`su: not found`:** the device is not rooted, and DebDroid cannot run on it.
+- **`Unsupported architecture`:** see [requirements](requirements.md).
+- **`Missing required file`:** you are in the wrong folder. `cd` to the
   extracted `DebDroid-main` folder; it should contain `install.sh`.
-- **The module installed but nothing happens** — reboot, then run the checker
+- **The module installed but nothing happens:** reboot, then run the checker
   above.
-- **Anything else** — run the checker and see
+- **Anything else:** run the checker and see
   [something went wrong](problems.md).
 
 ## Updating later

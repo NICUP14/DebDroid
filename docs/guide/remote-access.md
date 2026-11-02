@@ -1,4 +1,4 @@
-[← Guides](README.md)
+[← Docs](../README.md)
 
 # Connect From Your Computer
 
@@ -30,7 +30,7 @@ sh /sdcard/debdroid/debdroid.sh attach sh /sdcard/debdroid/command/sshserver.sh
 ```
 
 It installs the server if needed, generates its keys, starts it, and prints the
-exact command to connect with — something like:
+exact command to connect with, something like:
 
 ```txt
  -> ssh -p 8022 <user>@192.168.1.42
@@ -70,13 +70,13 @@ the second connection works, it is set up properly.
 
 ## If it didn't work
 
-- **Connection refused** — the server is not running. Check with
+- **Connection refused**: the server is not running. Check with
   `debdroid.sh status`, and that you used the right port.
-- **It worked, then stopped after a few minutes** — the phone is falling
+- **It worked, then stopped after a few minutes**: the phone is falling
   asleep. See [my connection drops](problems.md#my-connection-drops-after-a-few-minutes).
-- **It stops when you close the terminal** — you used `run` instead of
+- **It stops when you close the terminal**: you used `run` instead of
   `start`. See [keep it running](keep-it-running.md).
-- **Permission denied** — the user needs the network group. See
+- **Permission denied**: the user needs the network group. See
   [ping or apt says permission denied](problems.md#ping-or-apt-says-permission-denied).
 
 ## Don't put this on the internet

@@ -1,4 +1,4 @@
-[← Reference](README.md)
+[← Docs](../README.md)
 
 # Configuration
 
@@ -62,7 +62,7 @@ what catches a damaged image before it is mounted and made worse.
 | `CONFIG_ENV_SWAP_PRIO` | *(empty)* | Swap priority; empty places it below any existing zram |
 
 `CONFIG_ENV_SWAP` is off by default because the swapfile takes gigabytes of
-internal storage, and because it must be created first — the session only
+internal storage, and because it must be created first. The session only
 enables an existing file, never creates one, since writing it takes minutes.
 
 The empty priority default matters: most devices already run zram, which is far

@@ -1,4 +1,4 @@
-[← Reference](README.md)
+[← Docs](../README.md)
 
 # Command Reference
 
@@ -78,8 +78,8 @@ before the filesystem is touched.
 
 > [!NOTE]
 > These run **inside** debian. Anything belonging to the device rather than to
-> the userland is a top-level subcommand instead — `swap` is the example, and
-> it refuses to run if it finds itself inside a session.
+> the userland is a top-level subcommand instead. `swap` is the example, and it
+> refuses to run if it finds itself inside a session.
 
 ## Maintenance
 

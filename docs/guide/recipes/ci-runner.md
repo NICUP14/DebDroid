@@ -15,8 +15,8 @@ For many projects, yes. A 2015-era phone is roughly a Raspberry Pi 3, and it
 has a battery so a power cut does not kill a build mid-run.
 
 It suits linting, unit tests, small builds and scheduled jobs. It does not suit
-compiling anything large — and ARM-native builds are a genuine advantage if you
-ship ARM containers, since you avoid emulation entirely.
+compiling anything large. ARM-native builds are a genuine advantage if you ship
+ARM containers, since you avoid emulation entirely.
 
 ## What it needs
 
@@ -85,18 +85,18 @@ the job pick up.
 
 ## If it didn't work
 
-- **Runner goes offline when the screen turns off** — the device is sleeping.
+- **Runner goes offline when the screen turns off**: the device is sleeping.
   Check `debdroid.sh status` reports the wakelock as held.
-- **Builds fail on memory** — set up swap, and avoid parallel jobs. One at a
+- **Builds fail on memory**: set up swap, and avoid parallel jobs. One at a
   time is usually the right setting on a phone.
-- **Docker steps fail** — expected. Phone kernels usually lack the namespaces
-  and cgroup features containers need; use the shell executor.
-- **The device gets hot and slows down** — phones have no fans and will
+- **Docker steps fail**: expected. Phone kernels usually lack the isolation
+  features containers need, so use the shell executor instead.
+- **The device gets hot and slows down**: phones have no fans and will
   throttle. Keep it somewhere with airflow, and out of a case.
-- **Disk fills up** — clear old workspaces periodically, and
+- **Disk fills up**: clear old workspaces periodically, and
   [resize](../storage.md) if needed.
 
 > [!NOTE]
 > A self-hosted runner executes code from your repository. Only use one on
 > repositories you control, and never on a public repository that accepts pull
-> requests — anyone could run anything on your device.
+> requests, where anyone could run anything on your device.

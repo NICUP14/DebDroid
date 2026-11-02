@@ -8,7 +8,7 @@ internet directly.
 ## What you'll end up with
 
 A VPN endpoint on the phone. You connect to it from outside, and from there
-reach everything on your home network — including the other recipes, safely.
+reach everything on your home network, including the other recipes, safely.
 
 ## Why this one matters
 
@@ -104,15 +104,15 @@ home network by its local address.
 
 ## If it didn't work
 
-- **`wg-quick` fails on `sysctl`** — the kernel setting it wants may be
+- **`wg-quick` fails on `sysctl`**: the kernel setting it wants may be
   unavailable. Set `Table = off` in the `[Interface]` section and add the
   routes by hand.
-- **No module** — WireGuard needs kernel support. If your device's kernel
+- **No module**: WireGuard needs kernel support. If your device's kernel
   lacks it, `wireguard-go` is a userspace implementation that works instead.
-- **Connects but cannot reach anything** — check `AllowedIPs` on the client
+- **Connects but cannot reach anything**: check `AllowedIPs` on the client
   covers your home network, and that the phone can reach those addresses
   itself.
-- **Works at home, not from outside** — the port forward is wrong, or your
+- **Works at home, not from outside**: the port forward is wrong, or your
   home address changed. Verify with a port checker.
 
 > [!IMPORTANT]
