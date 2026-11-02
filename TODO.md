@@ -8,7 +8,7 @@ CI checks that this file agrees with it.
 
 See [CHANGELOG.md](CHANGELOG.md) for what each release actually shipped.
 
-## For DebDroid v1.2.6 (released)
+## For DebDroid v1.2.6 (complete, not yet released)
 
 - [X] Implement DebDroid background mode. (start, stop, attach, status)
 - [X] Implement a smart configuration system for `debdroid_mgr.sh`
@@ -41,6 +41,37 @@ See [CHANGELOG.md](CHANGELOG.md) for what each release actually shipped.
   - [X] Add preloading and binary mentions to `docs/reference/security.md`.
   - [X] Add randomness library mentions to `docs/reference/patches.md`.
   - [X] Add ReTerminal mention to the install guide.
+
+### Before tagging
+
+Everything above is done. These are what stand between the tree and a
+published release, listed here rather than left in someone's head.
+
+- [X] Stop the module zip bundling the image. It was 150 MB, of which the
+      scripts and binaries were 4 MB, and the release published the same image
+      again as a separate asset. A release now builds two zips: the slim one,
+      which downloads the image on first install, and
+      `DebDroid-module-offline.zip`, which bundles it for a device with no
+      usable network.
+- [X] Publish only the version's own changelog section as the release notes,
+      rather than the entire file back to 1.0.
+- [ ] Refresh the debian image. It was built 2025-09-02, so a new user's first
+      `apt upgrade` is enormous. `sudo sh tools/refresh-image.sh --parts`, then
+      update the line in `rootfs/manifest`.
+- [ ] Run the device suite on a phone, with `--session`, including mounting the
+      refreshed image on the oldest-kernel device available. **Nothing in this
+      repository has been verified on real hardware yet**, so every
+      device-dependent claim is unverified until this happens.
+- [ ] Merge `testing` into `main`, then repoint the README CI badge, which is
+      pinned to `?branch=testing` because the workflow only exists there.
+      The release workflow now refuses any tag that is not reachable from
+      `main`, so this is enforced rather than remembered.
+- [ ] Bump `actions/checkout` to v5 and pin the runner image. Node 20 is
+      deprecated and `ubuntu-latest` began migrating to Ubuntu 26 on
+      2026-10-19; both annotate every run today.
+- [ ] After publishing, verify the assets from a clean machine: download the
+      slim zip, check it against `SHA256SUMS`, and flash it on a device.
+      Nothing in CI exercises the release path itself.
 
 ## Planned for v1.3
 

@@ -1,7 +1,7 @@
 # Notes for Agents
 
 Dense orientation for an agent or new contributor changing this repository.
-Read the two constraints first — violating either produces code that looks
+Read the two constraints first. Violating either produces code that looks
 correct, passes review, and breaks on real hardware.
 
 For user-facing documentation see [docs/guide/](docs/guide/); for design detail
@@ -88,8 +88,9 @@ On device, two locations: `/sdcard/debdroid` (scripts, image) and
 | Uninstall | `debdroid/debdroid_uninstall.sh` |
 | A bundled binary | `provenance/manifest`, `THIRD_PARTY.md`, `package/build_all.sh`, `docs/reference/building.md` |
 | The shipped image | `tools/refresh-image.sh`, `rootfs/manifest` |
+| Release artifacts | `module/build.sh`, `.github/workflows/release.yml`, `docs/reference/releasing.md` |
 | Architecture support | `debdroid_lib.sh` → `check_arch` / `arch_is_built`; `package/build_all.sh` |
-| Anything versioned | See §7 — the version lives in five files |
+| Anything versioned | See §7, the version lives in five files |
 
 ### Adding a command
 
@@ -99,7 +100,7 @@ On device, two locations: `/sdcard/debdroid` (scripts, image) and
    backward compatible.
 3. Document in `docs/reference/cli.md`.
 4. If users will run it, add a guide page under `docs/guide/` and link it from
-   `docs/guide/README.md`.
+   `docs/README.md`, which is the one index page.
 5. Add tests. Prefer covering the refusals.
 
 ---
@@ -173,7 +174,7 @@ first put them in Android's real `/dev`. `populate_dev` works from
 `$dev_root`, never a bare `/dev/...`.
 
 **Overlay `upperdir` and `workdir` must be on one filesystem**, and `upper`
-must be `0755` — the overlay takes `/dev`'s mode from it, and `0700` hides
+must be `0755`: the overlay takes `/dev`'s mode from it, and `0700` hides
 `/dev` from non-root users. Getting this wrong is why the overlay silently
 never mounted for a year.
 
@@ -190,6 +191,16 @@ a `for` list. An unmatched glob stays literal; filter with `[ -f "$x" ]`.
 
 **Do not name a variable or manifest key `done`.** `$(probe done)` parses as a
 shell keyword inside a command substitution.
+
+**The module zip does not bundle the image unless asked.** `img/` is always
+present in a checkout, since the split parts are tracked in git, so keying the
+decision off its presence silently produces a 150 MB zip of which 4 MB is the
+project. `module/build.sh` takes `--with-image`, and a release builds two:
+`DebDroid-module.zip`, which downloads the image through
+`debdroid/debdroid_image.sh` and is what `module/update.json` points at, and
+`DebDroid-module-offline.zip`, which bundles it for a device with no usable
+network. Neither needs an installer change: `install.sh` already branches on
+whether an image is present.
 
 ---
 
@@ -236,7 +247,7 @@ Read-only by default: it never mounts the image, starts a session or writes.
 `--session` runs the full lifecycle and verifies cleanup. `device_probe.sh`
 runs inside and reports over `DEVTEST:key=value` lines.
 
-The probe must never write to `/dev` — on a bind fallback that lands in
+The probe must never write to `/dev`. On a bind fallback that lands in
 Android's real `/dev`, the exact bug the suite checks for.
 
 ### What CI enforces
@@ -257,7 +268,7 @@ finding over suppressing it, and when suppressing, say why in a comment.
 
 | File | Holds |
 | --- | --- |
-| `debdroid/debdroid_env.sh` | `DEBDROID_VER` — the truth |
+| `debdroid/debdroid_env.sh` | `DEBDROID_VER`, the truth |
 | `module/module.prop` | `version=v<X>` and `versionCode` (derived: 1.2.6 → 10206) |
 | `module/update.json` | the version the module manager polls |
 | `TODO.md` | `**Current version: vX**` plus a section per version |
@@ -293,6 +304,15 @@ v1.2.6 on the `testing` branch. arm64 binaries only; the other architectures
 have plumbing and build recipes but no artifacts. No release is published yet,
 so `rootfs/manifest` tarball entries are commented placeholders that fail
 closed.
+
+A tag runs `.github/workflows/release.yml`, which publishes four assets: the
+two module zips, `debian.img.gz`, and `SHA256SUMS`. **The tagged commit has to
+be reachable from `main`** or the workflow refuses and publishes nothing, so a
+tag on this branch does not release. Nothing in CI exercises that workflow, as
+it only fires on a `v*` tag, so changes to it are verified by running their
+shell by hand. What still blocks a tag is the `Before tagging` list in
+[TODO.md](TODO.md), and `docs/reference/releasing.md` says which changes earn a
+release at all.
 
 **Nothing in this repository has been verified on real hardware.** Every
 device-dependent claim should be treated as unverified until `tests/device.sh`

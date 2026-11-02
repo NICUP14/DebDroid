@@ -1,2 +1,5 @@
 .vscode
 scratch.md
+
+# Where module/build.sh and the release workflow write their artifacts
+out/

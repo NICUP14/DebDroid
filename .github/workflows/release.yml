@@ -25,6 +25,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # NOTE: The branch check below asks whether a commit is reachable from
+          #       main, which the default shallow clone cannot answer.
+          fetch-depth: 0
+
+      # Work happens on a testing branch, so a tag pushed from there must not
+      # publish. Tagging is deliberate; tagging the wrong branch is an easy
+      # mistake, and a published release is hard to take back.
+      - name: The tagged commit must be on main
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          # NOTE: Resolved from the tag rather than from GITHUB_SHA, which on a
+          #       manual run is the dispatched branch's tip, not the tag.
+          if ! commit=$(git rev-parse -q --verify "refs/tags/$TAG^{commit}"); then
+              echo "::error::No such tag: \"$TAG\"."
+              exit 1
+          fi
+
+          # NOTE: fetch-depth 0 should already have main, but asking for it by
+          #       refspec costs nothing and removes the dependency on exactly
+          #       which refs the checkout action chose to fetch.
+          git fetch --no-tags --quiet origin \
+              '+refs/heads/main:refs/remotes/origin/main' || true
+
+          if ! git rev-parse -q --verify refs/remotes/origin/main > /dev/null; then
+              echo "::error::Could not resolve origin/main to check the branch."
+              exit 1
+          fi
+
+          if ! git merge-base --is-ancestor "$commit" refs/remotes/origin/main; then
+              echo "::error::Tag \"$TAG\" ($commit) is not on main, so it will not be published. Merge it into main and tag again."
+              exit 1
+          fi
+
+          echo "ok: \"$TAG\" is on main"
 
       - name: Install tooling
         run: sudo apt-get update && sudo apt-get install -y zip e2fsprogs
@@ -40,8 +76,38 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Publishing v$version"
 
-      - name: Build the module zip
-        run: sh module/build.sh out/DebDroid-module.zip
+      # Only the version being released, as the changelog holds every version
+      # and publishing the whole history as one release's notes is noise
+      - name: Extract the release notes
+        run: |
+          mkdir -p out
+          awk -v v="${{ steps.version.outputs.version }}" '
+              $0 == "## " v { found = 1; next }
+              found && /^## / { exit }
+              found { print }
+          ' CHANGELOG.md > out/RELEASE_NOTES.md
+
+          if [ ! -s out/RELEASE_NOTES.md ]; then
+              echo "::error::No \"## ${{ steps.version.outputs.version }}\" section in CHANGELOG.md."
+              exit 1
+          fi
+
+          cat >> out/RELEASE_NOTES.md <<'FOOTER'
+
+          ---
+
+          Verify any asset against `SHA256SUMS` before installing it.
+          The full history is in [CHANGELOG.md](CHANGELOG.md).
+          FOOTER
+
+          cat out/RELEASE_NOTES.md
+
+      # Two variants: the slim zip downloads the image on first install, the
+      # other bundles it for a device with no usable network
+      - name: Build the module zips
+        run: |
+          sh module/build.sh out/DebDroid-module.zip
+          sh module/build.sh --with-image out/DebDroid-module-offline.zip
 
       # The image ships as one file rather than the split parts, as a release
       # asset has no size limit worth worrying about
@@ -87,7 +153,8 @@ jobs:
       - name: Checksum every asset
         run: |
           cd out
-          sha256sum DebDroid-module.zip debian.img.gz > SHA256SUMS
+          sha256sum DebDroid-module.zip DebDroid-module-offline.zip \
+              debian.img.gz > SHA256SUMS
           cat SHA256SUMS
 
       - name: Publish
@@ -97,11 +164,13 @@ jobs:
         run: |
           gh release create "$TAG" \
               --title "DebDroid $TAG" \
-              --notes-file CHANGELOG.md \
+              --notes-file out/RELEASE_NOTES.md \
               out/DebDroid-module.zip \
+              out/DebDroid-module-offline.zip \
               out/debian.img.gz \
               out/SHA256SUMS \
           || gh release upload "$TAG" --clobber \
               out/DebDroid-module.zip \
+              out/DebDroid-module-offline.zip \
               out/debian.img.gz \
               out/SHA256SUMS
