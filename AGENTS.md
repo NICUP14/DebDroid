@@ -337,9 +337,14 @@ Android's real `/dev`, the exact bug the suite checks for.
 Namespace flags, ext4 creation, provenance, license texts, no committed APKs,
 doc links, guide vocabulary, version agreement. Expect it to catch you.
 
-**shellcheck is not installed on the maintainer's machine**, so `make check`
-skips it locally and CI is the real gate. Account for that: prefer fixing a
-finding over suppressing it, and when suppressing, say why in a comment.
+**shellcheck runs locally and in CI, but not at the same version.** The local
+one is whatever the machine has; CI uses the one preinstalled on the pinned
+runner image. They disagree, and not only in the direction you would expect: a
+local 0.11.0 does not emit SC3013 for `test -ef` at all, while the version on
+`ubuntu-24.04` does, so pinning the runner reintroduced a warning a newer
+shellcheck had dropped. A clean local `make check` is therefore not proof that
+CI will pass. Prefer fixing a finding over suppressing it, and when suppressing,
+say why: the exclusion list in the `Makefile` carries a reason per code.
 
 ---
 

@@ -39,9 +39,20 @@ syntax:
 #   SC2016         single-quoted awk programs, which must not expand
 #   SC2153         distinct variables it mistakes for typos of each other
 #   SC2059         the test helper forwarding a printf format it was handed
+#   SC3013         "test -ef", which POSIX does not define but every shell this
+#                  runs under implements: android's /system/bin/sh (mksh), the
+#                  bundled busybox ash and the root manager's busybox were each
+#                  checked on a device. It compares two /proc/PID/ns/mnt links
+#                  to decide whether a process is in the environment's mount
+#                  namespace, which is the PID-namespace workaround from
+#                  section 1 of AGENTS.md. The portable form would be a
+#                  readlink per process, and that loop walks all of /proc
+#                  repeatedly while stopping an environment, so it would add
+#                  hundreds of forks on the slowest devices to satisfy a shell
+#                  none of them run.
 shellcheck:
 	@if command -v shellcheck > /dev/null 2>&1; then \
-	    shellcheck -s sh -e SC1090,SC1091,SC2016,SC2153,SC2059 $(SCRIPTS) \
+	    shellcheck -s sh -e SC1090,SC1091,SC2016,SC2153,SC2059,SC3013 $(SCRIPTS) \
 	        && echo 'shellcheck: ok'; \
 	else \
 	    echo 'shellcheck: not installed, skipping'; \
