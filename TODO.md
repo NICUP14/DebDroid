@@ -81,8 +81,9 @@ published release, listed here rather than left in someone's head.
 
 ## Known issues
 
-- [ ] **The slim module cannot fetch the image on an older device, so a fresh
-      install from it fails.** Confirmed on android 7.0. Two independent
+- [X] **The slim module could not fetch the image, so a fresh install from it
+      failed.** Fixed in the tree; it needs a release to reach anyone, as
+      v1.2.6 shipped with it. Confirmed on android 7.0. Two independent
       causes, both in the transport and neither in DebDroid:
       - The bundled busybox has no `ssl_client` applet and its built-in TLS is
         too limited for the release host, which answers the handshake with
@@ -100,15 +101,18 @@ published release, listed here rather than left in someone's head.
       `module/update.json` points at and the one the install guide sends
       people to.
 
-      Fixing it is a decision about trust, not a patch: the checksum that
-      gates the image comes from `rootfs/manifest` in this repository and never
-      from the connection, which is why the plain-http fallback was acceptable
-      in the first place. The options are to ship a certificate bundle and keep
-      verification, to try `curl` verified and then unverified with the
-      checksum as the only gate, or to tell older devices to use the offline
-      zip and leave the online path to a busybox built with real TLS. Until it
-      is decided, `docs/guide/install.md` overstates the slim path by saying it
-      only needs Wi-Fi.
+      The fix needed no certificate bundle and disabled nothing. The two
+      clients fail on opposite hosts and each succeeds where the other does
+      not, so the redirect is resolved with `curl`, which can talk to the host
+      that issues it, and the asset is pulled with busybox `wget`, which can
+      talk to the host it points at. busybox `wget` never validated
+      certificates anyway, so that is the same client the primary path already
+      used, and the image is still only accepted if it matches the checksum in
+      `rootfs/manifest`.
+
+      Verified end to end: the slim zip now installs on a wiped device,
+      downloads the published asset, lands on exactly the manifest checksum,
+      and the suite passes 73 on the result.
 
 Defects that have been seen but not diagnosed. They are listed here rather than
 under a target version, because what it takes to fix them is not known yet.

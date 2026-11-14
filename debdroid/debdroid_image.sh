@@ -76,6 +76,47 @@ read_manifest()
     [ -n "$image_sha" ] && [ "$image_sha" != "PLACEHOLDER" ]
 }
 
+# Follows the redirects of a url with the android toolbox curl, handing each
+# target to busybox wget until one downloads
+# Usage: fetch_redirected <url> <destination>
+# NOTE: This exists because the two http clients on a device fail on opposite
+#       hosts and each succeeds where the other does not. Measured on android
+#       7.0 against the releases host:
+#
+#         busybox wget   github.com: TLS alert 80, reset   asset host: works
+#         toolbox curl   github.com: works                 asset host: cert fails
+#
+#       busybox's built-in TLS is too old for the host that issues the
+#       redirect, and the host the redirect points at serves a certificate from
+#       a root younger than the device. So the redirect is resolved with curl,
+#       which can talk to the first host, and the asset is pulled with busybox
+#       wget, which can talk to the second. Neither step weakens anything:
+#       busybox wget never validated certificates at all, so it is the same
+#       client the primary path already uses, and the image is still only
+#       accepted if it matches the checksum recorded in the manifest.
+# NOTE: curl is asked for one hop at a time with no -L and the body thrown
+#       away, so it never connects to the final host. That matters: connecting
+#       there is exactly what it cannot do.
+fetch_redirected()
+{
+    command -v curl > /dev/null 2>&1 || return 1
+
+    fetch_url=$1
+    fetch_hop=0
+
+    while [ "$fetch_hop" -lt 5 ]; do
+        fetch_next=$(curl -s -o /dev/null -w '%{redirect_url}' "$fetch_url" 2> /dev/null)
+        [ -n "$fetch_next" ] || return 1
+
+        $BUSYBOX wget -q -O "$2" "$fetch_next" 2> /dev/null && return 0
+
+        fetch_url=$fetch_next
+        fetch_hop=$((fetch_hop + 1))
+    done
+
+    return 1
+}
+
 # Downloads a url, preferring https and falling back loudly to plain http
 # NOTE: The fallback is safe only because the expected checksum comes from the
 #       manifest that shipped with these scripts, not from the connection. Old
@@ -83,6 +124,16 @@ read_manifest()
 fetch()
 {
     $BUSYBOX wget -q -O "$2" "$1" 2> /dev/null && return 0
+
+    # The redirect chain of a release asset crosses two hosts, and no single
+    # client on the device can reach both
+    fetch_redirected "$1" "$2" && return 0
+
+    # A device whose certificate store is current, where only busybox is too old
+    if command -v curl > /dev/null 2>&1 &&
+            curl -fsSL --max-time 1800 -o "$2" "$1" 2> /dev/null; then
+        return 0
+    fi
 
     case "$1" in
         https://*)

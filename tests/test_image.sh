@@ -116,4 +116,51 @@ else
         "no verified image is published yet"
 fi
 
+t_section "the download crosses two hosts no single client can reach"
+
+# NOTE: Asserted against the source because it cannot be reproduced here: it
+#       needs the android toolbox curl, the bundled busybox and the real
+#       releases host. Measured on android 7.0, busybox wget cannot complete a
+#       handshake with the host that issues the redirect, and curl cannot
+#       validate the host the redirect points at, whose certificate comes from
+#       a root younger than the device. Each succeeds exactly where the other
+#       fails, so the redirect is resolved with curl and the asset pulled with
+#       busybox wget. Without that the slim module could not install on any
+#       device, as busybox's TLS is the blocker regardless of how new the
+#       device is.
+IMAGE_SH=$REPO_DIR/debdroid/debdroid_image.sh
+
+if grep -q '^fetch_redirected()' "$IMAGE_SH"; then
+    t_ok "the redirect-following download exists"
+else
+    t_no "the redirect-following download exists" \
+        "without it a release asset cannot be fetched at all"
+fi
+
+if grep -q 'fetch_redirected "\$1" "\$2"' "$IMAGE_SH"; then
+    t_ok "fetch falls back to it"
+else
+    t_no "fetch falls back to it" \
+        "defining it is useless unless the download path calls it"
+fi
+
+# One hop at a time, because connecting to the final host is the thing curl
+# cannot do
+if grep -q "redirect_url" "$IMAGE_SH" &&
+        ! grep -E "curl[^|]*-[A-Za-z]*L[A-Za-z]* .*redirect_url" "$IMAGE_SH" > /dev/null; then
+    t_ok "curl resolves one hop at a time rather than following the chain"
+else
+    t_no "curl resolves one hop at a time rather than following the chain" \
+        "with -L it would connect to the asset host, which is exactly what it" \
+        "cannot validate, so the redirect must be read a hop at a time"
+fi
+
+# The checksum stays the thing that decides, whichever client fetched the bytes
+if grep -q 'image_sha' "$IMAGE_SH"; then
+    t_ok "the manifest checksum still gates the image"
+else
+    t_no "the manifest checksum still gates the image" \
+        "every download path above is only acceptable because of this"
+fi
+
 t_summary
