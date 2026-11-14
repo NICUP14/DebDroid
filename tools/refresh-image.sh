@@ -158,6 +158,29 @@ rm -f "$MOUNT"/usr/bin/qemu-*-static
 RELEASE=$(sed -n 's/^VERSION_CODENAME=//p' "$MOUNT"/etc/os-release 2>/dev/null)
 [ -n "$RELEASE" ] || RELEASE=unknown
 
+# Zeroes the free space, which is what keeps the image compressible
+# NOTE: apt replaces files rather than editing them, so every superseded
+#       version stays behind in freed blocks. gzip cannot collapse that, and
+#       one refresh took the published debian.img.gz from 146 MB to 313 MB and
+#       the offline module zip from 150 MB to 318 MB, roughly doubling what a
+#       release has to upload and every user has to download. Writing zeros
+#       over the free space first undoes that, as the image is sparse and
+#       compresses to almost nothing where it is empty.
+# NOTE: dd is meant to fail here. It stops with ENOSPC, which is how it knows
+#       the filesystem is full, so the failure is the success condition and
+#       "set -e" must not see it.
+# NOTE: What it wrote is printed rather than discarded, and the compressed size
+#       is reported at the end. A run where this writes far less than the free
+#       space, or where the compressed size comes out near the uncompressed
+#       one, has not zeroed anything and must not be shipped: the free blocks
+#       still hold every superseded file. That exact failure shipped once and
+#       was only caught by measuring the gzip output.
+echo ":: Zeroing free space, so the image still compresses"
+zero_output=$(dd if=/dev/zero of="$MOUNT"/ZEROFILL bs=1M 2>&1 || true)
+rm -f "$MOUNT"/ZEROFILL
+sync
+echo " -> $(echo "$zero_output" | tail -n 1)"
+
 cleanup
 trap - EXIT
 
@@ -204,6 +227,13 @@ echo ":: Refreshed $IMAGE"
 echo " -> debian: $RELEASE"
 echo " -> size:   $(du -h "$IMAGE" | cut -f 1)"
 echo " -> sha256: $SHA"
+
+# The compressed size is what a release uploads and every user downloads, and
+# it is the only cheap way to tell whether the zeroing above actually worked
+# NOTE: Expect roughly a third of the uncompressed size. Anything close to the
+#       uncompressed size means the free space still holds old file contents,
+#       so stop and fix that rather than publishing it.
+echo " -> gzip:   $(gzip -9 -c "$IMAGE" | wc -c | awk '{printf "%.0f MB", $1 / 1000000}')"
 echo
 echo "Update this line in rootfs/manifest:"
 echo

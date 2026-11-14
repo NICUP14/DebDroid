@@ -26,7 +26,7 @@ A release is not free, which is the reason for the distinction:
 - `module/update.json` makes every user's Magisk, KernelSU or APatch app prompt
   them to update. Releasing per bugfix nags every user for every fix.
 - `versionCode` can only go up, so a version spent is spent.
-- Each release publishes roughly 300 MB of assets.
+- Each release publishes roughly 250 MB of assets.
 - A published release is awkward to retract once anyone has installed it.
 
 **Releases come from `main`.** The workflow resolves the tagged commit and
@@ -101,8 +101,8 @@ cannot be forgotten.
 | Asset | Size | For |
 | --- | --- | --- |
 | `DebDroid-module.zip` | ~4 MB | The normal path. Downloads the image on first install. |
-| `DebDroid-module-offline.zip` | ~150 MB | Installing on a device with no usable network. |
-| `debian.img.gz` | ~146 MB | What the slim module fetches, and a manual download. |
+| `DebDroid-module-offline.zip` | ~127 MB | Installing on a device with no usable network. |
+| `debian.img.gz` | ~123 MB | What the slim module fetches, and a manual download. |
 | `SHA256SUMS` | | Verifying any of the above. |
 
 The two zips come from the same `module/build.sh`; `--with-image` is the only
@@ -163,6 +163,27 @@ drifted.
 The release workflow re-checks that independently before publishing, since an
 image carrying `has_journal`, `metadata_csum` or `64bit` would not mount on the
 kernels this project exists for.
+
+### Check the compressed size before shipping a refreshed image
+
+The tool prints a `gzip:` line at the end. **It should be roughly a third of
+the uncompressed size**, so about 120 MB for a 1 GiB image. If it comes out
+near the uncompressed size, stop.
+
+`apt` replaces files instead of editing them, so every superseded version stays
+behind in blocks the filesystem now calls free. gzip cannot collapse that, and
+it does not show up in anything else: the image mounts, `e2fsck` is clean, the
+feature set is untouched, the device suite passes and the manifest verifies.
+The only visible symptom is the published download doubling. It happened once
+and reached a verified, tested image before the size was measured.
+
+The tool zeroes the free space to prevent it. If its `dd` line reports far
+fewer bytes than the filesystem has free, the zeroing did not happen and the
+image must not be published.
+
+Worth knowing for the opposite reason too: a refresh usually makes the image
+*smaller*, because `apt-get autoremove --purge` and `apt-get clean` take out
+more than a point release adds.
 
 ## What must be true before tagging
 

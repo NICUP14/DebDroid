@@ -38,10 +38,10 @@
 # has_journal, no metadata_csum, no 64bit. Verify after any change with
 # "dumpe2fs -h" and compare against the features recorded here.
 #
-# NOTE: Built 2025-09-02. A stale image means every new user's first
+# NOTE: Refreshed 2026-11-14. A stale image means every new user's first
 #       "apt upgrade" is enormous, which is what tools/refresh-image.sh exists
 #       to prevent. Refresh it and update this line.
-default-arm64 | IMAGE | arm64 | bookworm | 536d8333dfc2edd927f2e2ebcd356cef1dcde79ff666c8060964e9feb0491ff1 | 1073741824 | git:img/debian.img.part-* | features=ext_attr,resize_inode,dir_index,filetype,sparse_super,large_file | built=2025-09-02
+default-arm64 | IMAGE | arm64 | bookworm | c7a648967dcf45f67b8c2013d0f203e1b802619c463719b39931e654845aba90 | 1073741824 | git:img/debian.img.part-* | features=dir_index,ext_attr,filetype,large_file,resize_inode,sparse_super | built=2026-11-14
 
 # bookworm-arm64 | TARBALL | arm64 | bookworm | PLACEHOLDER | 0 | https://github.com/NICUP14/DebDroid/releases/download/rootfs-bookworm/debian-bookworm-arm64.tar.gz
 # bookworm-armhf | TARBALL | armhf | bookworm | PLACEHOLDER | 0 | https://github.com/NICUP14/DebDroid/releases/download/rootfs-bookworm/debian-bookworm-armhf.tar.gz

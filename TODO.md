@@ -55,9 +55,10 @@ published release, listed here rather than left in someone's head.
       usable network.
 - [X] Publish only the version's own changelog section as the release notes,
       rather than the entire file back to 1.0.
-- [ ] Refresh the debian image. It was built 2025-09-02, so a new user's first
-      `apt upgrade` is enormous. `sudo sh tools/refresh-image.sh --parts`, then
-      update the line in `rootfs/manifest`.
+- [X] Refresh the debian image. It was built 2025-09-02, so a new user's first
+      `apt upgrade` was enormous. Now bookworm 12.15, and smaller than before:
+      370 MiB of content against 446 MiB, because `autoremove --purge` and
+      `clean` take out more than a point release adds.
 - [ ] Run the device suite with `--session` on the refreshed image, on an armv7
       device, and on android 10 or later, where `/apex` exists and the chroot
       does not mount it.

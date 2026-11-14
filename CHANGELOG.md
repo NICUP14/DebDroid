@@ -142,6 +142,11 @@ project did not keep a changelog before 1.2.6.
 
 ### Changed
 
+- **The shipped debian image is current again**, bookworm 12.15 rather than a
+  build from 2025-09-02, so a new install no longer starts with a year of
+  updates to download. It is also smaller than before, 370 MiB of content
+  against 446 MiB, because the refresh purges and cleans more than a point
+  release adds, and the download is about 123 MB rather than 146 MB.
 - **The documentation is split into three tiers**: the README as the pitch,
   `docs/guide/` written for people who just want it working, and
   `docs/reference/` where the technical detail belongs. `Security.md` and
