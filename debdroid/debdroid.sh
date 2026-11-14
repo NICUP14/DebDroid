@@ -72,9 +72,10 @@ Options:
   list
       Lists all command scripts in the command directory.
 
-  command [COMMAND_NAME]
+  command [COMMAND_NAME] [ARGUMENTS...]
       Executes the specified command script from the command directory.
-      Example: debdroid.sh command setup_user
+      Arguments after the name are passed to the script.
+      Example: debdroid.sh command user alice
 
   resize [SIZE]
       Resizes the debian image to the specified size.
@@ -119,7 +120,7 @@ elif [ "$DEBDROID_OPT" = "list" ]; then
 elif [ "$DEBDROID_OPT" = "command" ]; then
     if [ -z "$DEBDROID_SUBOPT" ]; then
         error "Missing command script name." \
-            "Usage: $0 command [COMMAND_NAME]"
+            "Usage: $0 command [COMMAND_NAME] [ARGUMENTS...]"
         exit 1
     fi
 
@@ -139,7 +140,15 @@ elif [ "$DEBDROID_OPT" = "command" ]; then
         exit 1
     fi
 
-    debdroid_run sh "$CMD"
+    # Forwards anything after the script name, so a command script can be driven
+    # without a prompt
+    # NOTE: An exported variable cannot be used for this. The session starts
+    #       through "su -", which resets the environment, so "DEBDROID_USER=x
+    #       debdroid.sh command user" never reached the script and it prompted
+    #       anyway. Arguments survive, as the manager quotes them for the
+    #       single "su -c" string it runs.
+    shift 2
+    debdroid_run sh "$CMD" "$@"
 
 # Handles the "resize" option
 elif [ "$DEBDROID_OPT" = "resize" ]; then

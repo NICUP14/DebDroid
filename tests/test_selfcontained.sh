@@ -90,6 +90,104 @@ for script in "$REPO_DIR"/command/*.sh; do
     fi
 done
 
+t_section "android assumptions the host cannot check"
+
+# NOTE: Each check below is a failure mode that only appears on a device, so
+#       the rest of this suite passes with the bug present. They are asserted
+#       statically rather than exercised because the host has no android
+#       property service, no phone-shaped device names, no busybox built the way
+#       the bundled one is, and no privilege to unshare a mount namespace.
+
+# getprop belongs to the android toolbox and is not a busybox applet, so
+# "$BUSYBOX getprop" writes a usage error to stderr and nothing to stdout. That
+# is indistinguishable from an unset property, which emptied the abi and made
+# the installer reject every device it ran on.
+# NOTE: Comment lines are stripped first, as the fix itself documents the
+#       mistake it replaced and would otherwise match.
+getprop_misuse=
+for script in "$TEST_SD"/*.sh "$REPO_DIR"/install.sh "$REPO_DIR"/tests/device.sh; do
+    [ -f "$script" ] || continue
+    if $BUSYBOX grep -vE '^[[:space:]]*#' "$script" |
+            $BUSYBOX grep -qE '\$\{?BUSYBOX\}?"? +getprop'; then
+        getprop_misuse="$getprop_misuse ${script##*/}"
+    fi
+done
+if [ -z "$getprop_misuse" ]; then
+    t_ok "no script expects getprop from busybox"
+else
+    t_no "no script expects getprop from busybox" \
+        "getprop is an android binary, not a busybox applet, so this reads as" \
+        "an unset property on every device. Use get_prop instead." \
+        "offending:$getprop_misuse"
+fi
+
+# get_prop is what replaced it, so it has to exist and not route through busybox
+if $BUSYBOX grep -q '^get_prop()' "$TEST_SD"/debdroid_lib.sh; then
+    t_ok "get_prop is defined in the shared library"
+else
+    t_no "get_prop is defined in the shared library" \
+        "check_arch and the resolv.conf loop both depend on it"
+fi
+
+# busybox df wraps a device name longer than its column onto a line of its own
+# and prints the numbers on the next one, which is what /data looks like on a
+# real phone. Parsing by line number then reads the wrapped name, whose fields
+# are empty. "-P" forces one line per filesystem.
+df_unsafe=
+for script in "$TEST_SD"/*.sh "$REPO_DIR"/install.sh "$REPO_DIR"/tests/device.sh; do
+    [ -f "$script" ] || continue
+    if $BUSYBOX grep -vE '^[[:space:]]*#' "$script" |
+            $BUSYBOX grep -E '\$\{?BUSYBOX\}?"? +df ' |
+            $BUSYBOX grep -qv -- '-P'; then
+        df_unsafe="$df_unsafe ${script##*/}"
+    fi
+done
+if [ -z "$df_unsafe" ]; then
+    t_ok "every df call forces the one-line POSIX format"
+else
+    t_no "every df call forces the one-line POSIX format" \
+        "without \"-P\" busybox wraps a long device name and the columns shift," \
+        "which reported 0M free on a device with 17G available" \
+        "offending:$df_unsafe"
+fi
+
+# The bundled busybox is built without CONFIG_FEATURE_SWAPON_PRI, so its swapon
+# rejects "-p" outright and swap never came up on a real device.
+if $BUSYBOX grep -qE '\$\{?BUSYBOX\}?"? +swapon +-p' "$TEST_SD"/debdroid_mgr.sh; then
+    if $BUSYBOX grep -qE '\$\{?BUSYBOX\}?"? +swapon +"\$DEBDROID_SWAP"' \
+            "$TEST_SD"/debdroid_mgr.sh; then
+        t_ok "swapon falls back when the build has no priority support"
+    else
+        t_no "swapon falls back when the build has no priority support" \
+            "the bundled busybox has no \"-p\", so this is the only code path" \
+            "and swap silently never enables"
+    fi
+else
+    t_skip "swapon falls back when the build has no priority support" \
+        "the manager no longer passes -p"
+fi
+
+# Pass 1 used to end on "unset", discarding what pass 2 returned, so every
+# foreground run exited 0 and "debdroid.sh run false" looked successful.
+if $BUSYBOX grep -q 'exit "\$DEBDROIDMGR_STATUS"' "$TEST_SD"/debdroid_mgr.sh; then
+    t_ok "a foreground session hands back its exit status"
+else
+    t_no "a foreground session hands back its exit status" \
+        "pass 1 must exit with what pass 2 returned, or every run reports success"
+fi
+
+# The pid file is the only handle "stop" has on a running supervisor. Removing
+# it before checking for one let a foreground run orphan a live background
+# environment, which then needed a reboot to clear.
+if $BUSYBOX grep -q '^    if read_supervisor "\$DEBDROIDMGR_PID"; then' \
+        "$TEST_SD"/debdroid_mgr.sh; then
+    t_ok "a live supervisor is detected before the pid file is cleared"
+else
+    t_no "a live supervisor is detected before the pid file is cleared" \
+        "the check must not be conditional on the mode: a foreground run that" \
+        "deletes the pid file leaves the background environment unreachable"
+fi
+
 t_section "the frontend dispatches every documented subcommand"
 
 # A subcommand in the help that has no branch silently falls through to "run",

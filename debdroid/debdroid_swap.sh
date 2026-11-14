@@ -101,8 +101,18 @@ create_swap()
     fi
 
     # Refuses to fill the device, which would break android itself
-    available=$($BUSYBOX df -k "$DEBDROID_HOME" 2> /dev/null |
-        $BUSYBOX awk 'NR == 2 { print int($4 / 1024) }')
+    # NOTE: "-P" forces the POSIX one-filesystem-per-line format. Without it
+    #       busybox df wraps a device name longer than its column onto a line of
+    #       its own and prints the numbers on the next one, which is what
+    #       /data looks like on a real phone
+    #       ("/dev/block/bootdevice/by-name/userdata"). "NR == 2" then read the
+    #       wrapped name, whose fourth field is empty, and reported 0M free on a
+    #       device with 17G to spare, refusing every swapfile.
+    # NOTE: The field is matched as a number so an unexpected format yields an
+    #       empty value and skips the check, rather than refusing on a
+    #       misparse.
+    available=$($BUSYBOX df -P -k "$DEBDROID_HOME" 2> /dev/null |
+        $BUSYBOX awk 'END { if ($4 ~ /^[0-9]+$/) print int($4 / 1024) }')
     if [ -n "$available" ] && [ "$available" -lt "$blocks" ]; then
         error "Not enough free space for a ${SWAP_SIZE} swapfile." \
             "Free space: ${available}M, required: ${blocks}M."

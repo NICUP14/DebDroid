@@ -62,9 +62,14 @@ whether the wakelock and swap are active.
 
 Lists the command scripts in `/sdcard/debdroid/command`.
 
-### `command NAME`
+### `command NAME [ARGUMENTS...]`
 
-Runs a command script inside the environment.
+Runs a command script inside the environment. Anything after the name is passed
+to the script, which is how a script runs without prompting:
+
+```sh
+debdroid.sh command user alice
+```
 
 | Script | Does |
 | --- | --- |
@@ -158,6 +163,15 @@ Prints the usage summary.
 | `NO_COLOR` | Any value disables colored output |
 | `DEBDROIDMGR_MODE` | Mode the manager runs in: `run`, `start`, `attach`, `stop`, `status` |
 | `DEBDROID_NONINTERACTIVE` | Set by the module installer, skips the installer's size prompt |
+
+The five below are read by the command scripts, which run **inside** debian.
+Setting them in the calling shell has no effect: the session starts through
+`su -`, which resets the environment. Put them in
+`/sdcard/debdroid/environment`, which every command script sources, or pass the
+value as an argument where the script takes one.
+
+| Variable | Effect |
+| --- | --- |
 | `DEBDROID_USER` | Username for `command user`, skipping its prompt |
 | `DEBDROID_SSH_PORT` | Port for `command sshserver` (default 8022) |
 | `DEBDROID_VNC_DISPLAY` | VNC display number (default 1, so port 5901) |

@@ -192,6 +192,45 @@ a `for` list. An unmatched glob stays literal; filter with `[ -f "$x" ]`.
 **Do not name a variable or manifest key `done`.** `$(probe done)` parses as a
 shell keyword inside a command substitution.
 
+**`getprop` is not a busybox applet.** It belongs to the android toolbox, and
+the bundled busybox does not provide it. `$BUSYBOX getprop` therefore prints a
+usage error to stderr and *nothing* to stdout, which is indistinguishable from
+an unset property. That emptied the detected architecture and made the
+installer refuse every device. Use `get_prop` from `debdroid_lib.sh`, which
+resolves `/system/bin/getprop` by path because a module flash runs with a
+minimal PATH. This is the one external tool that deliberately does not go
+through `$BUSYBOX`.
+
+**busybox `df` wraps long device names.** `/data` on a real phone is something
+like `/dev/block/bootdevice/by-name/userdata`, which is wider than the
+Filesystem column, so busybox prints it on a line of its own and the numbers on
+the next one with an empty first field. Parsing by line number then reads the
+wrapped name: that is how a device with 17G free reported 0M and refused every
+swapfile. Always pass `-P`, which forces one line per filesystem.
+
+**The bundled busybox is not built with every applet option.** `swapon` has no
+`-p`, as `CONFIG_FEATURE_SWAPON_PRI` is off, so passing it fails outright. An
+applet existing in `busybox --list` does not mean the flag you want exists;
+`tests/device.sh` checks applets, not their options. Where a flag is an
+optimisation rather than a requirement, fall back to the plain form.
+
+**Nothing exported reaches a `command/` script.** The session runs through
+`su -`, which resets the environment, so `DEBDROID_USER=x debdroid.sh command
+user` never arrived. Those scripts read `/sdcard/debdroid/environment`, which is
+sourced inside the chroot, and `debdroid.sh command NAME ARGS...` forwards
+arguments. Use one of those two, and do not add a documented variable that only
+works from the calling shell.
+
+**Pass 1 of the manager must hand back pass 2's exit status.** It used to end
+on `unset`, so every foreground run exited 0: `debdroid.sh run false` looked
+successful and a refusal was indistinguishable from a clean session. `attach`
+was always correct; `run` now matches it.
+
+**The pid file is the only handle `stop` has.** Check for a live supervisor
+*before* removing it, in every mode. Removing it first let a foreground `run`
+delete a healthy background environment's pid file and then stop at the image
+lock, leaving the supervisor alive and unreachable until a reboot.
+
 **The module zip does not bundle the image unless asked.** `img/` is always
 present in a checkout, since the split parts are tracked in git, so keying the
 decision off its presence silently produces a 150 MB zip of which 4 MB is the
@@ -219,7 +258,15 @@ make all          # all of the above
 
 `tests/run.sh` copies the product scripts to a temp dir and rewrites the paths
 baked into them, so the shipped scripts are never modified. It installs a
-busybox stub that forwards applets to host tools and fakes `getprop` and `id`.
+busybox stub that forwards applets to host tools and fakes `id`, plus a
+`getprop` shim on `PATH`.
+
+The split matters. The stub used to fake `getprop` *as a busybox applet*, which
+made `$BUSYBOX getprop` pass every host test while failing on every real
+device, because busybox has no such applet. The stub no longer answers it, so
+an applet it does not know falls through to the host and fails there too.
+**Never teach the stub an applet the bundled busybox does not actually have**:
+that turns the suite into a test of the stub.
 
 Functions are pulled out of the product scripts and `eval`'d:
 
@@ -231,8 +278,8 @@ This requires the `name()` / `{`-on-next-line style. Keep it.
 
 Three things that will trip you:
 
-- **`FAKE_ABI`, `FAKE_ABILIST`, `FAKE_UID` must be exported.** The stub is a
-  separate process.
+- **`FAKE_ABI`, `FAKE_ABILIST`, `FAKE_UID` must be exported.** The stub and the
+  `getprop` shim are separate processes.
 - **Functions that call `step`/`error` need `debdroid_ui.sh` sourced.**
 - **shellcheck cannot see through `eval`**, so test files carry a per-file
   `# shellcheck disable=` with a comment naming what consumes the variable.
@@ -313,9 +360,5 @@ it only fires on a `v*` tag, so changes to it are verified by running their
 shell by hand. What still blocks a tag is the `Before tagging` list in
 [TODO.md](TODO.md), and `docs/reference/releasing.md` says which changes earn a
 release at all.
-
-**Nothing in this repository has been verified on real hardware.** Every
-device-dependent claim should be treated as unverified until `tests/device.sh`
-has run on a phone. Say so when reporting results.
 
 Open work is in [TODO.md](TODO.md), ordered by target version.

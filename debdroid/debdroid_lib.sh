@@ -49,16 +49,39 @@ require_root()
     fi
 }
 
+# Reads an android system property, printing nothing when it is unset
+# Usage: get_prop <name>
+# NOTE: This is the one external tool that deliberately does not go through
+#       $BUSYBOX. "getprop" is part of the android toolbox and is not a busybox
+#       applet at all, so "$BUSYBOX getprop" prints "applet not found" to stderr
+#       and nothing to stdout, which reads exactly like a device whose property
+#       is unset. That silently emptied the abi and made the installer refuse
+#       every device it was run on.
+# NOTE: Resolved by path first, because a module flash runs customize.sh with a
+#       minimal PATH that need not contain /system/bin.
+get_prop()
+{
+    for candidate in /system/bin/getprop /system/xbin/getprop; do
+        if [ -x "$candidate" ]; then
+            "$candidate" "$1" 2> /dev/null
+            return 0
+        fi
+    done
+
+    # Falls back to a PATH lookup for an unusual layout
+    getprop "$1" 2> /dev/null
+}
+
 # Maps the device's android abi to the matching debian architecture
 # Sets "DEBDROID_ARCH" to the debian architecture name, for the caller to read
 # shellcheck disable=SC2034
 check_arch()
 {
-    DEBDROID_ABI=$($BUSYBOX getprop ro.product.cpu.abi)
+    DEBDROID_ABI=$(get_prop ro.product.cpu.abi)
 
     # Falls back to the abi list, as very old devices lack the single-abi property
     if [ -z "$DEBDROID_ABI" ]; then
-        DEBDROID_ABI=$($BUSYBOX getprop ro.product.cpu.abilist)
+        DEBDROID_ABI=$(get_prop ro.product.cpu.abilist)
         DEBDROID_ABI=${DEBDROID_ABI%%,*}
     fi
 

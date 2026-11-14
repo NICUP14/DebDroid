@@ -69,6 +69,51 @@ project did not keep a changelog before 1.2.6.
 - Assembling the image from its parts is checked, as a partial image only fails
   later during the filesystem check.
 
+- **The installer rejected every device.** `getprop` is part of the android
+  toolbox and is not a busybox applet, but it was called as `$BUSYBOX getprop`.
+  That writes a usage error to stderr and nothing to stdout, which looks exactly
+  like an unset property, so the detected architecture was always empty and the
+  installer refused to continue. The host suite could not catch it: its busybox
+  stub emulated `getprop` as an applet, so the one thing that was wrong was the
+  thing the test faked. The stub no longer provides it, and a check now refuses
+  the call shape outright.
+- **DNS inside the session was never the device's.** The same mistake in the
+  `resolv.conf` loop meant no nameserver was ever read from android, so every
+  session silently fell back to the hardcoded default instead of the network's
+  own resolver.
+- **`debdroid.sh run` always reported success.** It discarded what the session
+  returned, so `debdroid.sh run false` exited 0 and a refusal to start was
+  indistinguishable from a clean run. Anything scripted on top of it, the boot
+  hook included, could not tell that it had failed. `attach` was already
+  correct, and `run` now matches it.
+- **A foreground run could orphan the background environment.** Starting a
+  session while `debdroid.sh start` was running deleted the supervisor's pid
+  file before testing whether one was alive, then stopped at the image lock.
+  The supervisor stayed running with no pid file, so `stop` could not find it,
+  `status` reported it as stopped, and only a reboot cleared it. Both modes now
+  check for a live supervisor before touching the file, and say to attach
+  instead.
+- **Swap never worked.** Two independent causes. `swapon -p` needs a busybox
+  built with `CONFIG_FEATURE_SWAPON_PRI` and the bundled one is not, so every
+  attempt failed on the flag; there is a fallback now, and the kernel's own
+  descending priorities keep the file below zram as intended. Separately, the
+  free-space check read the wrong column: busybox `df` wraps a device name
+  longer than its column onto its own line, which is what `/data` looks like on
+  a real phone, so a device with 17G free was reported as having 0M and every
+  swapfile was refused.
+- **`command` dropped its arguments**, so the documented
+  `DEBDROID_USER=name debdroid.sh command user` could not work at all: the
+  session starts through `su -`, which resets the environment, and no argument
+  was forwarded in its place. Arguments are passed through now
+  (`debdroid.sh command user alice`), and the reference says which variables
+  belong in `/sdcard/debdroid/environment` rather than the calling shell.
+- **`command user` claimed success after failing to set a password.** Without a
+  terminal `passwd` aborts and the account stays locked, which is the safe
+  outcome, but the script still printed that the user was ready to use. It now
+  says the account is locked and how to set a password.
+- `/etc/hosts` read `127.0.0.1 localhost localhost` on any device reporting its
+  hostname as `localhost`, which is most of them.
+
 ### Changed
 
 - **The documentation is split into three tiers**: the README as the pitch,

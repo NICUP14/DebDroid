@@ -3,3 +3,7 @@ scratch.md
 
 # Where module/build.sh and the release workflow write their artifacts
 out/
+
+# Local tooling for driving a test device. Machine-specific (paths, and the
+# launcher differs per host os), so it stays out of the tree.
+.mcp.json

@@ -58,10 +58,9 @@ published release, listed here rather than left in someone's head.
 - [ ] Refresh the debian image. It was built 2025-09-02, so a new user's first
       `apt upgrade` is enormous. `sudo sh tools/refresh-image.sh --parts`, then
       update the line in `rootfs/manifest`.
-- [ ] Run the device suite on a phone, with `--session`, including mounting the
-      refreshed image on the oldest-kernel device available. **Nothing in this
-      repository has been verified on real hardware yet**, so every
-      device-dependent claim is unverified until this happens.
+- [ ] Run the device suite with `--session` on the refreshed image, on an armv7
+      device, and on android 10 or later, where `/apex` exists and the chroot
+      does not mount it.
 - [ ] Merge `testing` into `main`, then repoint the README CI badge, which is
       pinned to `?branch=testing` because the workflow only exists there.
       The release workflow now refuses any tag that is not reachable from

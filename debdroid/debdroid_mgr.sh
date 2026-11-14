@@ -176,7 +176,15 @@ enable_swap()
         swap_priority=-2
     fi
 
-    if ! swap_output=$($BUSYBOX swapon -p "$swap_priority" "$DEBDROID_SWAP" 2>&1); then
+    # NOTE: "-p" needs CONFIG_FEATURE_SWAPON_PRI, which the bundled busybox is
+    #       not built with: its swapon accepts only -a, -e and -d, so every
+    #       attempt failed with a usage message and swap never worked on a real
+    #       device. The priority is an optimisation rather than a requirement,
+    #       so a build without it falls back to letting the kernel choose. The
+    #       kernel hands out descending negative priorities, which already puts
+    #       the file below an existing zram device, so the intent survives.
+    if ! swap_output=$($BUSYBOX swapon -p "$swap_priority" "$DEBDROID_SWAP" 2>&1) &&
+            ! swap_output=$($BUSYBOX swapon "$DEBDROID_SWAP" 2>&1); then
         warn "Failed to enable swap, continuing without it." "$swap_output"
     fi
 }
@@ -456,8 +464,9 @@ start_environment()
     # Creates the /etc/resolv.conf file
     write_env_file etc/resolv.conf
     for server in 1 2 3 4; do
-        [ -z "$($BUSYBOX getprop net.dns$server)" ] && break
-        echo "nameserver $($BUSYBOX getprop net.dns$server)" >> "$DEBDROIDMGR_ENV"/etc/resolv.conf
+        nameserver=$(get_prop net.dns"$server")
+        [ -z "$nameserver" ] && break
+        echo "nameserver $nameserver" >> "$DEBDROIDMGR_ENV"/etc/resolv.conf
     done
 
     # Creates a fallback for the /etc/resolv.conf file
@@ -467,8 +476,16 @@ start_environment()
     fi
 
     # Creates the /etc/hosts file
+    # NOTE: Android devices commonly report their hostname as "localhost", which
+    #       wrote "127.0.0.1 localhost localhost". The name is appended only when
+    #       it actually adds one.
     write_env_file etc/hosts
-    echo "127.0.0.1     localhost $($BUSYBOX hostname)" >> "$DEBDROIDMGR_ENV"/etc/hosts
+    env_hostname=$($BUSYBOX hostname 2> /dev/null)
+    case "$env_hostname" in
+        '' | localhost) env_hostname= ;;
+    esac
+    echo "127.0.0.1     localhost${env_hostname:+ $env_hostname}" \
+        >> "$DEBDROIDMGR_ENV"/etc/hosts
     echo "::1           localhost ip6-localhost ip6-loopback" >> "$DEBDROIDMGR_ENV"/etc/hosts
 }
 
@@ -701,14 +718,24 @@ if [ -z "$DEBDROIDMGR_MNT" ]; then
     DEBDROIDMGR_MNT=$($BUSYBOX readlink /proc/self/ns/mnt | $BUSYBOX cut -d ':' -f 2)
     export DEBDROIDMGR_MNT DEBDROIDMGR_MODE
 
-    # Refuses to start a second background environment over a running one
-    if [ "$DEBDROIDMGR_MODE" = "start" ] && read_supervisor "$DEBDROIDMGR_PID"; then
+    # Refuses to run over a live background environment, in either mode
+    # NOTE: This guard used to cover "start" only, while the removal below ran
+    #       unconditionally. A foreground "run" therefore deleted a healthy
+    #       supervisor's pid file and was then refused by the lock in pass 2,
+    #       leaving the supervisor alive and unreachable: "stop" could no longer
+    #       find it, "status" reported it as stopped, and only a reboot
+    #       recovered the device. Both modes are refused here, before the pid
+    #       file is touched.
+    if read_supervisor "$DEBDROIDMGR_PID"; then
         error "A background environment is already running." \
-            "Attach to it with \"debdroid.sh attach\", or stop it first."
+            "Attach to it with \"debdroid.sh attach\", or stop it with \"debdroid.sh stop\"."
         exit 1
     fi
 
     # Clears a pid file left behind by a supervisor that did not exit cleanly
+    # NOTE: Only reached when no live supervisor owns it, as read_supervisor
+    #       above returned false. A stale file is safe to remove, a live one is
+    #       the only handle "stop" has.
     $BUSYBOX rm -f "$DEBDROIDMGR_PID"
 
     # Runs pass 2 inside a private mount namespace, with the lock file open as fd 9
@@ -731,8 +758,16 @@ if [ -z "$DEBDROIDMGR_MNT" ]; then
 
     $BUSYBOX unshare --mount sh "$0" "$DEBDROIDMGR_IMG" "$DEBDROIDMGR_ENV" "$DEBDROIDMGR_BIN" "$DEBDROIDMGR_LIB" "$@" \
         9> "$DEBDROIDMGR_LOCK"
+    DEBDROIDMGR_STATUS=$?
 
     unset DEBDROIDMGR_MNT
+
+    # Hands back what the session actually returned
+    # NOTE: Without this the script ended on "unset" and every foreground run
+    #       exited 0, so "debdroid.sh run false" looked successful and a refusal
+    #       to start was indistinguishable from a clean session. "attach"
+    #       already propagated its status, which is the behaviour matched here.
+    exit "$DEBDROIDMGR_STATUS"
 
 # Pass 2: Sets up the linux filesystem
 else

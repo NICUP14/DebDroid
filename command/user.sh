@@ -6,7 +6,11 @@
 # single most common thing new users miss, so it happens here automatically.
 #
 # Usage: debdroid.sh command user          (prompts for the name)
-#        DEBDROID_USER=name debdroid.sh command user
+#        debdroid.sh command user <name>   (no prompt)
+#
+# A name can also be set as DEBDROID_USER in /sdcard/debdroid/environment, which
+# this script reads below. Exporting DEBDROID_USER in the calling shell does not
+# work: the session starts through "su -", which resets the environment.
 
 if [ "$(id -u)" -ne 0 ]; then
     echo "Error: Missing required super-user permissions." >&2
@@ -16,7 +20,8 @@ fi
 # shellcheck disable=SC1091
 [ -f /sdcard/debdroid/environment ] && . /sdcard/debdroid/environment
 
-USER_NAME=$DEBDROID_USER
+# The argument wins, then the environment file, then a prompt
+USER_NAME=${1:-$DEBDROID_USER}
 
 if [ -z "$USER_NAME" ]; then
     printf 'Enter a name for the new user: '
@@ -47,8 +52,15 @@ else
         exit 1
     fi
 
+    # NOTE: Reported rather than ignored. Without a terminal, as when the
+    #       command is driven from a script or over adb, passwd aborts and
+    #       useradd's locked password stays in place. That is the safe outcome,
+    #       so it is not an error, but the closing "is ready" line used to claim
+    #       an account the user could not log in to.
     echo " -> Set a password for \"$USER_NAME\""
-    passwd "$USER_NAME"
+    if ! passwd "$USER_NAME"; then
+        PASSWORD_SET=no
+    fi
 fi
 
 # The inet group is what android checks before allowing a socket
@@ -68,3 +80,10 @@ fi
 
 echo ":: The user \"$USER_NAME\" is ready"
 echo " -> Switch to it with: su - $USER_NAME"
+
+# The account works, but nothing can authenticate as it until a password exists
+if [ "$PASSWORD_SET" = "no" ]; then
+    echo " -> No password was set, so the account stays locked: \"su - $USER_NAME\""
+    echo "    works from root, but ssh and login do not. Set one with:"
+    echo "    debdroid.sh run passwd $USER_NAME"
+fi

@@ -121,9 +121,3 @@ make all    # syntax, shellcheck, tests, provenance, docs, versions
 - **[Roadmap](../TODO.md)**: open work, by target version.
 - **[Releases](https://github.com/NICUP14/DebDroid/releases)**: the module zips
   and the prebuilt image.
-
----
-
-**Nothing in this repository has been verified on real hardware yet.** Every
-device-dependent claim in these pages should be read as unverified until
-`tests/device.sh` has run on a phone.

@@ -69,6 +69,15 @@ The empty priority default matters: most devices already run zram, which is far
 faster than a file on internal storage, so the file is placed below it rather
 than competing with it.
 
+> [!NOTE]
+> `CONFIG_ENV_SWAP_PRIO` has no effect with the busybox currently bundled.
+> Setting a priority needs a build with `CONFIG_FEATURE_SWAPON_PRI`, and this
+> one does not have it, so its `swapon` rejects the flag. The session notices
+> and enables the file without a priority instead, which still lands below
+> zram: the kernel hands out descending negative priorities, and an existing
+> zram device already holds the first one. The flag is kept because a
+> self-built busybox is planned, and it will start working then.
+
 ## Paths
 
 `debdroid_env.sh` defines where things live. Changing these is supported but

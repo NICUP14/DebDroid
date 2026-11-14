@@ -19,20 +19,18 @@ export TEST_TMP
 trap 'rm -rf "$TEST_TMP"' EXIT
 
 # Installs a fake busybox that forwards applets to the host tools
-# NOTE: getprop and id do not exist on a build machine, so they are emulated;
-#       FAKE_ABI, FAKE_ABILIST and FAKE_UID let a test change what they report.
+# NOTE: "id" does not report the same way on a build machine, so it is emulated;
+#       FAKE_UID lets a test change what it reports.
+# NOTE: getprop is deliberately NOT emulated here. It is an android toolbox
+#       binary and never a busybox applet, so faking it as one let
+#       "$BUSYBOX getprop" pass every host test while failing on every real
+#       device. An applet this stub does not know now falls through to the host,
+#       where there is no getprop, so that regression fails here too.
 cat > "$TEST_TMP"/busybox <<'STUB'
 #!/bin/sh
 applet=$1
 shift
 case "$applet" in
-    getprop)
-        case "$1" in
-            ro.product.cpu.abi)     echo "${FAKE_ABI-arm64-v8a}" ;;
-            ro.product.cpu.abilist) echo "${FAKE_ABILIST-}" ;;
-            *)                      echo "" ;;
-        esac
-        ;;
     id)
         if [ "$1" = "-u" ]; then echo "${FAKE_UID-0}"; else exec id "$@"; fi
         ;;
@@ -43,6 +41,22 @@ esac
 STUB
 chmod 755 "$TEST_TMP"/busybox
 export FAKE_BUSYBOX="$TEST_TMP"/busybox
+
+# Stands in for the android property service, which no build machine has
+# NOTE: get_prop tries /system/bin/getprop first and falls back to a PATH
+#       lookup, which is the hook this uses. FAKE_ABI and FAKE_ABILIST let a
+#       test change what the device appears to be.
+cat > "$TEST_TMP"/getprop <<'STUB'
+#!/bin/sh
+case "$1" in
+    ro.product.cpu.abi)     echo "${FAKE_ABI-arm64-v8a}" ;;
+    ro.product.cpu.abilist) echo "${FAKE_ABILIST-}" ;;
+    *)                      echo "" ;;
+esac
+STUB
+chmod 755 "$TEST_TMP"/getprop
+PATH="$TEST_TMP:$PATH"
+export PATH
 
 # Copies the product scripts and repoints the paths baked into them
 mkdir -p "$TEST_TMP"/sd "$TEST_TMP"/home

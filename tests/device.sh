@@ -94,12 +94,24 @@ t_filesystem()
 
 t_section "Device"
 
-t_info "abi"      "$($BUSYBOX getprop ro.product.cpu.abi)"
-t_info "abilist"  "$($BUSYBOX getprop ro.product.cpu.abilist)"
-t_info "android"  "$($BUSYBOX getprop ro.build.version.release) (sdk $($BUSYBOX getprop ro.build.version.sdk))"
-t_info "device"   "$($BUSYBOX getprop ro.product.model)"
+t_info "abi"      "$(get_prop ro.product.cpu.abi)"
+t_info "abilist"  "$(get_prop ro.product.cpu.abilist)"
+t_info "android"  "$(get_prop ro.build.version.release) (sdk $(get_prop ro.build.version.sdk))"
+t_info "device"   "$(get_prop ro.product.model)"
 t_info "kernel"   "$($BUSYBOX uname -r)"
 t_info "busybox"  "$($BUSYBOX --help 2>&1 | $BUSYBOX head -n 1)"
+
+# Reading a property is how the architecture is detected, so the installer
+# cannot run at all without it
+# NOTE: Checked separately from the busybox applets below, because getprop is an
+#       android toolbox binary rather than a busybox applet. Expecting it from
+#       busybox is what made the installer reject every device.
+if [ -n "$(get_prop ro.build.version.sdk)" ]; then
+    t_ok "android properties are readable"
+else
+    t_no "android properties are readable" \
+        "\"getprop\" produced nothing, so the architecture cannot be detected."
+fi
 
 if [ "$($BUSYBOX id -u)" -eq 0 ]; then
     t_ok "running as root"
@@ -156,7 +168,10 @@ elif [ -f "$DEBDROID_IMG" ]; then
     t_info "size" "$($BUSYBOX du -h "$DEBDROID_IMG" 2>/dev/null | $BUSYBOX cut -f 1)"
 
     # Growing the image needs free space, so report it alongside
-    free_space=$($BUSYBOX df -h /data 2>/dev/null | $BUSYBOX tail -n 1)
+    # NOTE: "-P" keeps each filesystem on one line. Without it busybox df wraps
+    #       a long device name and "tail -n 1" reported a line with no
+    #       filesystem on it.
+    free_space=$($BUSYBOX df -P -h /data 2>/dev/null | $BUSYBOX tail -n 1)
     t_info "free on /data" "${free_space:-unknown}"
 else
     t_no "the debian image exists" "Expected it at: $DEBDROID_IMG"
@@ -248,9 +263,13 @@ fi
 t_section "Required busybox applets"
 
 # Applets the current scripts call, so a missing one breaks DebDroid today
+# NOTE: "getprop" is deliberately absent from this list. It is an android
+#       toolbox binary, not a busybox applet, and listing it here claimed the
+#       bundled busybox provides something it never has. It is checked above
+#       instead, through get_prop.
 missing=
 for applet in awk cut tac seq kill sleep readlink mountpoint mount umount \
-    chroot unshare flock sysctl hostname printf id getprop stat truncate du df; do
+    chroot unshare flock sysctl hostname printf id stat truncate du df; do
     $BUSYBOX --list | $BUSYBOX grep -qx "$applet" || missing="$missing $applet"
 done
 if [ -z "$missing" ]; then
