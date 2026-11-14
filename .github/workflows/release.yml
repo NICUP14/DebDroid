@@ -161,7 +161,14 @@ jobs:
 
       - name: Compress the image
         run: |
-          gzip -9 -c out/debian.img > out/debian.img.gz
+          # NOTE: "-n" keeps the source name and mtime out of the header.
+          #       Without it gzip embeds the mtime of the file it just
+          #       assembled, so republishing the same image produced a
+          #       different debian.img.gz every time and the asset could not be
+          #       reproduced even though its contents were identical. The
+          #       module zips were already reproducible; this makes the image
+          #       match.
+          gzip -9 -n -c out/debian.img > out/debian.img.gz
           rm out/debian.img
           ls -la out/
 
@@ -177,15 +184,28 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          gh release create "$TAG" \
-              --title "DebDroid $TAG" \
-              --notes-file out/RELEASE_NOTES.md \
-              out/DebDroid-module.zip \
-              out/DebDroid-module-offline.zip \
-              out/debian.img.gz \
-              out/SHA256SUMS \
-          || gh release upload "$TAG" --clobber \
+          if gh release create "$TAG" \
+                  --title "DebDroid $TAG" \
+                  --notes-file out/RELEASE_NOTES.md \
+                  out/DebDroid-module.zip \
+                  out/DebDroid-module-offline.zip \
+                  out/debian.img.gz \
+                  out/SHA256SUMS; then
+              exit 0
+          fi
+
+          # The release already exists, which happens when a tag is moved onto
+          # a fix, so replace the assets and refresh the notes
+          # NOTE: The notes are refreshed deliberately. Only "create" sets
+          #       them, so re-publishing used to upload corrected assets and
+          #       leave the previous notes in place, describing a release that
+          #       no longer matched what people were downloading.
+          gh release upload "$TAG" --clobber \
               out/DebDroid-module.zip \
               out/DebDroid-module-offline.zip \
               out/debian.img.gz \
               out/SHA256SUMS
+
+          gh release edit "$TAG" \
+              --title "DebDroid $TAG" \
+              --notes-file out/RELEASE_NOTES.md
