@@ -89,6 +89,7 @@ On device, two locations: `/sdcard/debdroid` (scripts, image) and
 | A bundled binary | `provenance/manifest`, `THIRD_PARTY.md`, `package/build_all.sh`, `docs/reference/building.md` |
 | The shipped image | `tools/refresh-image.sh`, `rootfs/manifest` |
 | Release artifacts | `module/build.sh`, `.github/workflows/release.yml`, `docs/reference/releasing.md` |
+| The module or how it installs | `module/customize.sh`, `module/build.sh`, plus `tests/test_module.sh` |
 | Architecture support | `debdroid_lib.sh` → `check_arch` / `arch_is_built`; `package/build_all.sh` |
 | Anything versioned | See §7, the version lives in five files |
 
@@ -231,6 +232,40 @@ was always correct; `run` now matches it.
 delete a healthy background environment's pid file and then stop at the image
 lock, leaving the supervisor alive and unreachable until a reboot.
 
+**A top-level `install.sh` must never go into the module zip.** Magisk,
+KernelSU and APatch all decide a zip is an old-style module with
+
+```sh
+is_legacy_script() {
+  unzip -l "$ZIPFILE" install.sh | grep -q install.sh
+}
+```
+
+and on a match they *source* that file as the module's install script, having
+extracted only `module.prop`, `install.sh`, `uninstall.sh` and `common/*`
+beside it. `customize.sh` is never reached. Because the file is sourced, an
+`exit` inside it kills the whole flash. The installer therefore ships as
+`debdroid-install.sh`, and `module/build.sh` refuses to build a zip with a
+top-level `install.sh`. Only a top-level one matters; a nested path is fine.
+
+**The payload arrives at 0644 in a flash.** The root manager applies its own
+default permissions before sourcing `customize.sh`, so nothing in the zip is
+executable at that point. `install.sh` restores the execute bit on
+`./bin/busybox` before testing it, because on a fresh device there is no
+installed copy to fall back to. Anything else the installer needs to execute
+straight out of the zip needs the same treatment.
+
+**A root manager's console shows only stdout.** `error` and `warn` write to
+stderr, so anything they print is invisible during a flash. `customize.sh`
+merges stderr when it runs the installer. Keep that, or a failed flash tells
+the user nothing.
+
+**The old-style flags in `customize.sh` are inert.** `SKIPMOUNT`, `PROPFILE`,
+`POSTFSDATA` and `LATESTARTSERVICE` are read only on the legacy install path
+and ignored for a `customize.sh` module. Nothing is mounted over `/system`
+because the module ships no `system/` directory, and the boot hook runs because
+`service.sh` exists. Do not rely on those flags to enforce anything.
+
 **The module zip does not bundle the image unless asked.** `img/` is always
 present in a checkout, since the split parts are tracked in git, so keying the
 decision off its presence silently produces a 150 MB zip of which 4 MB is the
@@ -247,7 +282,7 @@ whether an image is present.
 
 ```sh
 make check        # sh -n, bash --posix -n, dash -n, shellcheck
-make test         # host suite, no root, no device, ~2s
+make test         # host suite, no root, no device; builds the module zip
 make provenance   # binaries and the image against their manifests
 make docs         # links, redirect stubs, guide vocabulary
 make version      # every file naming a version agrees

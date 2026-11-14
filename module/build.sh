@@ -72,7 +72,23 @@ mkdir -p "$STAGING" "${OUTPUT%/*}"
 
 echo " -> Collecting the payload"
 cp "$MODULE_DIR"/module.prop "$MODULE_DIR"/customize.sh "$STAGING"/
-cp "$REPO_DIR"/install.sh "$STAGING"/
+
+# NOTE: Renamed on the way in, and this is not cosmetic. Magisk decides a zip is
+#       an old-style "legacy" module purely by whether it contains a top-level
+#       "install.sh":
+#
+#           is_legacy_script() {
+#               unzip -l "$ZIPFILE" install.sh | grep -q install.sh
+#           }
+#
+#       On a match it sources that file as the module's own install script and
+#       never runs customize.sh, after extracting only module.prop, install.sh,
+#       uninstall.sh and common/* into a scratch directory. DebDroid's installer
+#       then ran with none of its payload beside it, failed its own file check,
+#       and called "exit 1", which killed the whole installer because it had
+#       been sourced rather than run. The module could not be flashed at all.
+#       KernelSU and APatch share this installer lineage and the same check.
+cp "$REPO_DIR"/install.sh "$STAGING"/debdroid-install.sh
 cp -r "$REPO_DIR"/debdroid "$REPO_DIR"/command "$REPO_DIR"/bin "$REPO_DIR"/lib \
       "$REPO_DIR"/tests "$REPO_DIR"/boot "$STAGING"/
 
@@ -122,6 +138,19 @@ if stamp=$(date -u -d "@$SOURCE_DATE_EPOCH" +%Y%m%d%H%M.%S 2> /dev/null); then
 else
     echo " -> Warning: could not set a fixed timestamp, the zip will not be" >&2
     echo "    byte-for-byte reproducible." >&2
+fi
+
+# NOTE: Checked rather than trusted. The installer is copied in under another
+#       name above, and a later edit could undo that without any visible
+#       symptom until someone tries to flash the zip, where the failure looks
+#       like a broken installer rather than a naming collision.
+if [ -e "$STAGING"/install.sh ]; then
+    echo "Error: \"install.sh\" must not sit at the root of the module zip." >&2
+    echo "    Magisk, KernelSU and APatch all treat a zip containing one as an" >&2
+    echo "    old-style module: they source it and never run customize.sh, so" >&2
+    echo "    the module cannot install. Ship it as \"debdroid-install.sh\"." >&2
+    rm -rf "$STAGING"
+    exit 1
 fi
 
 echo " -> Creating $OUTPUT"

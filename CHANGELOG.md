@@ -113,6 +113,32 @@ project did not keep a changelog before 1.2.6.
   says the account is locked and how to set a password.
 - `/etc/hosts` read `127.0.0.1 localhost localhost` on any device reporting its
   hostname as `localhost`, which is most of them.
+- **The module could not be flashed by any root manager.** Magisk, KernelSU and
+  APatch decide a zip is an old-style module purely on whether it contains a
+  top-level `install.sh`, and DebDroid's own installer sat there under exactly
+  that name. The installer was then *sourced* as the module's install script,
+  with only `module.prop` and itself extracted beside it, so it failed its own
+  file check and called `exit 1`, which killed the whole flash because it had
+  been sourced rather than run. `customize.sh` never ran at all. The installer
+  now ships as `debdroid-install.sh`, and the build refuses to produce a zip
+  with a top-level `install.sh` so it cannot regress.
+- **A fresh module install could not find the bundled busybox.** Root managers
+  apply their own default permissions, which set every file to 0644, before
+  `customize.sh` runs. The installer tested `[ -x ./bin/busybox ]`, found it not
+  executable and fell back to the installed path, which does not exist on a
+  fresh device, so the install stopped with "Cannot locate the busybox binary".
+  It appeared to work only where an earlier install had left an executable copy
+  behind. The installer now restores the execute bit before testing it, which
+  also covers a zip extracted by a file manager that drops permissions.
+- **A failed flash explained nothing.** `error` and `warn` write to stderr, and
+  a root manager's console shows only stdout, so a failure printed one abort
+  line with no reason and none of the installer's guidance. The commonest real
+  case is a device with no usable network and no bundled image, where the
+  installer says exactly where to put the image by hand. The module now merges
+  the installer's stderr into the console.
+- The module set `service.sh` to 0755 and then ran a recursive permission pass
+  that reset it to 0644, so the explicit mode did nothing. Harmless, as Magisk
+  runs service scripts through `sh`, but the ordering is fixed.
 
 ### Changed
 

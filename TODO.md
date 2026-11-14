@@ -72,6 +72,35 @@ published release, listed here rather than left in someone's head.
       slim zip, check it against `SHA256SUMS`, and flash it on a device.
       Nothing in CI exercises the release path itself.
 
+## Known issues
+
+Defects that have been seen but not diagnosed. They are listed here rather than
+under a target version, because what it takes to fix them is not known yet.
+
+- [ ] **Socket errors inside the environment, unresolved.** Reported as
+      recurring, but no symptom has been captured, so there is nothing here to
+      act on yet and no guess should be written down in its place. It is not
+      the `inet` group case: that one is understood, handled automatically by
+      `command/user.sh`, and covered by `docs/guide/problems.md`.
+
+      What to record the next time it happens, as it decides both the cause and
+      whether it blocks a release:
+
+      - the exact message, and which program printed it
+      - the command that triggered it, and whether the session came from
+        `debdroid.sh run` or from `attach`
+      - whether it happens as root or only as a user created by
+        `command/user.sh`, and the output of `id` for that user
+      - whether it is a listening socket (a server failing to bind, and on
+        which port) or an outgoing connection
+      - whether it reproduces for `ping`, `apt`, `ssh` and a plain
+        `getent hosts`, which separates a routing or DNS fault from a
+        permission one
+      - `cat /proc/net/tcp | head` and `ip addr` from inside the session
+
+      Once the symptom is known: fix it under the version it lands in, and if
+      users can hit it, add a row to the table in `docs/guide/problems.md`.
+
 ## Planned for v1.3
 
 Multi-arch is the theme: the plumbing landed in 1.2.6, so this is mostly

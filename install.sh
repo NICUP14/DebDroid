@@ -30,6 +30,18 @@ done
 # Uses the bundled busybox, as the installed one does not exist yet on a fresh install
 # NOTE: find_busybox replaces the install path set by debdroid_env.sh while it is missing
 # NOTE: BUSYBOX keeps the export from debdroid_env.sh, so the helpers below see it
+# NOTE: The execute bit is restored before it is tested. A module flash arrives
+#       with every file at 0644, because the root manager applies its own
+#       default permissions before customize.sh runs, and some file managers
+#       extract a zip the same way. Without this the bundled busybox looks
+#       absent, and on a fresh device there is no installed copy to fall back
+#       to, so the install failed with "Cannot locate the busybox binary".
+#       chmod is used directly rather than through busybox, for the obvious
+#       reason, and it is in the android toolbox on every supported release.
+if [ -f ./bin/busybox ] && [ ! -x ./bin/busybox ]; then
+    chmod 755 ./bin/busybox 2> /dev/null
+fi
+
 # shellcheck disable=SC2034
 [ -x ./bin/busybox ] && BUSYBOX=./bin/busybox
 require_busybox
