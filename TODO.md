@@ -87,6 +87,14 @@ under a target version, because what it takes to fix them is not known yet.
       the `inet` group case: that one is understood, handled automatically by
       `command/user.sh`, and covered by `docs/guide/problems.md`.
 
+      **Deliberately deferred past 1.2.6.** Releasing on it was weighed and
+      declined: with no symptom there is nothing to fix, and holding the
+      release would have kept a year-old image and a module that could not be
+      flashed in front of users for longer. Not mentioned in the release notes
+      either, as "socket errors may occur, cause unknown" tells a user nothing
+      they can act on. Characterise it first, then fix it in the version it
+      lands in.
+
       What to record the next time it happens, as it decides both the cause and
       whether it blocks a release:
 

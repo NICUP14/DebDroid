@@ -9,7 +9,7 @@
 Real Debian packages, not an emulator and not a rebuilt userland.<br>
 Android keeps working. Nothing is flashed and nothing is lost.
 
-[![ci](https://img.shields.io/github/actions/workflow/status/NICUP14/DebDroid/ci.yml?branch=testing&style=flat-square&label=ci)](https://github.com/NICUP14/DebDroid/actions/workflows/ci.yml)
+[![ci](https://img.shields.io/github/actions/workflow/status/NICUP14/DebDroid/ci.yml?branch=main&style=flat-square&label=ci)](https://github.com/NICUP14/DebDroid/actions/workflows/ci.yml)
 [![version](https://img.shields.io/badge/version-1.2.6-blue?style=flat-square)](CHANGELOG.md)
 [![android](https://img.shields.io/badge/android-5.0%2B-3ddc84?style=flat-square&logo=android&logoColor=white)](docs/guide/requirements.md)
 [![arch](https://img.shields.io/badge/arch-arm64--v8a-lightgrey?style=flat-square)](docs/guide/requirements.md)
