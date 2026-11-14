@@ -139,6 +139,19 @@ project did not keep a changelog before 1.2.6.
 - The module set `service.sh` to 0755 and then ran a recursive permission pass
   that reset it to 0644, so the explicit mode did nothing. Harmless, as Magisk
   runs service scripts through `sh`, but the ordering is fixed.
+- **The slim module could not download the image, so a first install from it
+  failed.** That is the zip the module manager points at and the one the
+  install guide recommends, and it had never worked on any device. The two HTTP
+  clients on a device fail on opposite halves of the releases redirect and each
+  succeeds where the other does not: busybox's `wget` cannot complete a
+  handshake with the host that issues the redirect, which is why this was never
+  about how old the device was, and the host the redirect points at serves a
+  certificate from a root younger than the device, which the system `curl`
+  cannot validate. The redirect is now resolved with `curl` and the asset
+  pulled with busybox `wget`. No certificate bundle was added and no
+  verification was turned off: busybox `wget` never validated certificates, so
+  it is the same client the download already used, and the image is still
+  accepted only if it matches the checksum recorded in `rootfs/manifest`.
 
 ### Changed
 
