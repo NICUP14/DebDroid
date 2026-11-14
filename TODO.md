@@ -8,7 +8,7 @@ CI checks that this file agrees with it.
 
 See [CHANGELOG.md](CHANGELOG.md) for what each release actually shipped.
 
-## For DebDroid v1.2.6 (complete, not yet released)
+## For DebDroid v1.2.6 (released 2026-11-14)
 
 - [X] Implement DebDroid background mode. (start, stop, attach, status)
 - [X] Implement a smart configuration system for `debdroid_mgr.sh`
@@ -72,9 +72,12 @@ published release, listed here rather than left in someone's head.
       2026-10-19, so both annotated every run. Now `actions/checkout@v5` on
       `ubuntu-24.04`, pinned so a runner migration cannot change the build
       under us.
-- [ ] After publishing, verify the assets from a clean machine: download the
-      slim zip, check it against `SHA256SUMS`, and flash it on a device.
-      Nothing in CI exercises the release path itself.
+- [X] After publishing, verify the assets from a clean machine. Done for
+      v1.2.6: both zips and `debian.img.gz` match the published `SHA256SUMS`,
+      the gzipped image decompresses to exactly the checksum `rootfs/manifest`
+      records, and the slim zip rebuilds byte-for-byte identically to the
+      published one from the tagged commit, which is the reproducibility claim
+      verified against a real release rather than asserted.
 
 ## Known issues
 

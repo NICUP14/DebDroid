@@ -387,18 +387,19 @@ See `docs/reference/releasing.md`.
 
 ## 9. Current state
 
-v1.2.6 on the `testing` branch. arm64 binaries only; the other architectures
-have plumbing and build recipes but no artifacts. No release is published yet,
-so `rootfs/manifest` tarball entries are commented placeholders that fail
-closed.
+**v1.2.6 is published**, from `main`, which `testing` now matches. It is the
+project's first release. arm64 binaries only; the other architectures have
+plumbing and build recipes but no artifacts. The `rootfs/manifest` *tarball*
+entries are still commented placeholders that fail closed, as only the image is
+published so far.
 
 A tag runs `.github/workflows/release.yml`, which publishes four assets: the
 two module zips, `debian.img.gz`, and `SHA256SUMS`. **The tagged commit has to
-be reachable from `main`** or the workflow refuses and publishes nothing, so a
-tag on this branch does not release. Nothing in CI exercises that workflow, as
-it only fires on a `v*` tag, so changes to it are verified by running their
-shell by hand. What still blocks a tag is the `Before tagging` list in
-[TODO.md](TODO.md), and `docs/reference/releasing.md` says which changes earn a
-release at all.
+be reachable from `main`** and **the tag has to match `DEBDROID_VER`**, or the
+workflow refuses and publishes nothing, so a tag on a working branch does not
+release. Nothing in CI exercises that workflow, as it only fires on a `v*` tag,
+so changes to it are verified by running their shell by hand. What earns a
+release at all is in `docs/reference/releasing.md`, and open work is in
+[TODO.md](TODO.md).
 
 Open work is in [TODO.md](TODO.md), ordered by target version.

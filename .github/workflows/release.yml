@@ -76,6 +76,21 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Publishing v$version"
 
+      # A tag naming one version while the tree says another would publish
+      # mislabeled assets, and a published release cannot be corrected once
+      # anyone has installed from it
+      - name: The tag must match the version in the tree
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [ "$TAG" != "v$VERSION" ]; then
+              echo "::error::Tag \"$TAG\" does not match DEBDROID_VER \"$VERSION\". Expected \"v$VERSION\"."
+              exit 1
+          fi
+
+          echo "ok: \"$TAG\" matches the tree"
+
       # Only the version being released, as the changelog holds every version
       # and publishing the whole history as one release's notes is noise
       - name: Extract the release notes
