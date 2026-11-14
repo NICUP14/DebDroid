@@ -9,9 +9,9 @@ on:
 jobs:
   check:
     name: Syntax and shellcheck
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install shellcheck and dash
         run: sudo apt-get update && sudo apt-get install -y shellcheck dash
@@ -39,17 +39,17 @@ jobs:
 
   test:
     name: Host test suite
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Run the host test suite
         run: make test
 
   provenance:
     name: Provenance and licensing
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Fails on a changed checksum, and on any binary nobody wrote down
       - name: Verify the manifest
@@ -78,9 +78,9 @@ jobs:
 
   docs:
     name: Documentation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Broken links and jargon creeping into the guide tier both erode the
       # three-audience split the documentation is organised around
@@ -89,9 +89,9 @@ jobs:
 
   constraints:
     name: Hard constraints
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Android devices support no namespace other than the mount namespace, so
       # a stray --pid or --net flag would break the project on real hardware.

@@ -65,9 +65,11 @@ published release, listed here rather than left in someone's head.
       pinned to `?branch=testing` because the workflow only exists there.
       The release workflow now refuses any tag that is not reachable from
       `main`, so this is enforced rather than remembered.
-- [ ] Bump `actions/checkout` to v5 and pin the runner image. Node 20 is
+- [X] Bump `actions/checkout` to v5 and pin the runner image. Node 20 was
       deprecated and `ubuntu-latest` began migrating to Ubuntu 26 on
-      2026-10-19; both annotate every run today.
+      2026-10-19, so both annotated every run. Now `actions/checkout@v5` on
+      `ubuntu-24.04`, pinned so a runner migration cannot change the build
+      under us.
 - [ ] After publishing, verify the assets from a clean machine: download the
       slim zip, check it against `SHA256SUMS`, and flash it on a device.
       Nothing in CI exercises the release path itself.
