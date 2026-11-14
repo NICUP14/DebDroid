@@ -232,6 +232,25 @@ was always correct; `run` now matches it.
 delete a healthy background environment's pid file and then stop at the image
 lock, leaving the supervisor alive and unreachable until a reboot.
 
+**Neither http client on a device can fetch a release asset alone.** Measured
+on android 7.0 against the releases host:
+
+| | the host issuing the redirect | the host it points at |
+| --- | --- | --- |
+| busybox `wget` | TLS alert 80, reset | works |
+| toolbox `curl` | works | certificate fails |
+
+busybox's built-in TLS is too old for the first host, which is why this is not
+a question of how old the device is, and the second serves a certificate from a
+root younger than the device. So `debdroid_image.sh` resolves the redirect with
+`curl`, one hop at a time with the body discarded so it never connects to the
+second host, then pulls the asset with busybox `wget`. Do not "simplify" that
+to one client, and do not reach for `curl -k`: nothing here is a verification
+bypass, because busybox `wget` never validated certificates in the first place
+and the image is accepted only on matching the checksum in `rootfs/manifest`.
+That checksum is the trust anchor for the whole download, which is also why the
+plain-http fallback below it is acceptable.
+
 **A top-level `install.sh` must never go into the module zip.** Magisk,
 KernelSU and APatch all decide a zip is an old-style module with
 
