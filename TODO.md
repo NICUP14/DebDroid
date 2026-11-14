@@ -59,9 +59,10 @@ published release, listed here rather than left in someone's head.
       `apt upgrade` was enormous. Now bookworm 12.15, and smaller than before:
       370 MiB of content against 446 MiB, because `autoremove --purge` and
       `clean` take out more than a point release adds.
-- [ ] Run the device suite with `--session` on the refreshed image, on an armv7
-      device, and on android 10 or later, where `/apex` exists and the chroot
-      does not mount it.
+- [ ] Run the device suite with `--session` on an armv7 device, and on android
+      10 or later, where `/apex` exists and the chroot does not mount it.
+      Neither is a release blocker on its own: armv7 ships no binaries yet, and
+      `arch_is_built` refuses it rather than failing later.
 - [ ] Merge `testing` into `main`, then repoint the README CI badge, which is
       pinned to `?branch=testing` because the workflow only exists there.
       The release workflow now refuses any tag that is not reachable from
