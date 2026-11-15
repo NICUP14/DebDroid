@@ -25,9 +25,14 @@ Android keeps working. Nothing is flashed and nothing is lost.
 ## Quick look
 
 ```sh
-sh /sdcard/debdroid/debdroid.sh start              # debian comes up in the background
-sh /sdcard/debdroid/debdroid.sh command sshserver  # now ssh in from your laptop
-sh /sdcard/debdroid/debdroid.sh attach             # or get a shell right here
+# Bring debian up and leave it running
+sh /sdcard/debdroid/debdroid.sh start
+
+# Start an ssh server in it, so you can work from your laptop
+sh /sdcard/debdroid/debdroid.sh command sshserver
+
+# Or get a shell on the phone itself
+sh /sdcard/debdroid/debdroid.sh attach
 ```
 
 Close the terminal and it keeps running. It can also start again after a reboot.

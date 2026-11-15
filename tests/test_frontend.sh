@@ -79,6 +79,41 @@ case "$output" in
     *)                               t_no "reports a missing name" "$output" ;;
 esac
 
+t_section "command runs inside a background environment when there is one"
+
+# NOTE: This is the README's first example: "start" and then
+#       "command sshserver". The command used to take the foreground path, so
+#       the manager refused it because the image was already in use, and where
+#       it did run the session shut down the server as it exited.
+cat > "$TEST_SD"/debdroid_mgr.sh <<'MODESTUB'
+#!/bin/sh
+printf 'mode=%s' "${DEBDROIDMGR_MODE:-unset}"
+MODESTUB
+
+echo 'true' > "$TEST_SD"/command/sshserver.sh
+mkdir -p "$TEST_TMP"/home
+
+rm -f "$TEST_TMP"/home/mnt.pid
+t_eq "with nothing running it takes a foreground session" \
+    "mode=unset" "$(frontend_argv command sshserver)"
+
+# A pid file naming this process, whose namespace id therefore matches
+own_mnt=$($BUSYBOX readlink /proc/self/ns/mnt | $BUSYBOX cut -d ':' -f 2)
+echo "$$ $own_mnt" > "$TEST_TMP"/home/mnt.pid
+t_eq "with a background environment it attaches to it" \
+    "mode=attach" "$(frontend_argv command sshserver)"
+
+# A stale pid file must not send it down the attach path
+echo "999999 $own_mnt" > "$TEST_TMP"/home/mnt.pid
+t_eq "a stale pid file is ignored" \
+    "mode=unset" "$(frontend_argv command sshserver)"
+
+# "run" is unaffected, as a foreground session is what it is for
+rm -f "$TEST_TMP"/home/mnt.pid
+t_eq "run is left alone" "mode=unset" "$(frontend_argv run true)"
+
+rm -f "$TEST_TMP"/home/mnt.pid
+
 t_section "the manager quotes the command for its su -c string"
 
 # shellcheck disable=SC1091

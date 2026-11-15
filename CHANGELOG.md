@@ -157,6 +157,14 @@ project did not keep a changelog before 1.2.6.
   after it, so a rollback was filed under the wrong version. It now lives in
   `debdroid_lib.sh`, which is always replaced, and `make version` fails if a
   copy reappears in the preserved file.
+- **The README's first example did not work.** `debdroid.sh start` followed by
+  `command sshserver` was refused: `command` always took the foreground path,
+  so the manager stopped at the image already being in use. Even without a
+  background environment it was wrong, because a foreground session shuts the
+  environment down when the command exits, killing the server it had just
+  started. `command` now runs inside the background environment when there is
+  one, exactly as `attach` does, and keeps a session of its own when there is
+  not.
 - **`self-update --rollback` could restore the wrong version.** It chose its
   backup with `ls | tail -n 1`, which sorts lexically, so 1.2.9 was picked over
   1.2.10. The version to restore is now recorded when the backup is taken, so

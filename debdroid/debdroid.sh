@@ -140,6 +140,18 @@ elif [ "$DEBDROID_OPT" = "command" ]; then
         exit 1
     fi
 
+    # Runs inside the background environment when there is one
+    # NOTE: Without this, "debdroid.sh start" followed by "command sshserver"
+    #       was refused, because the command took the foreground path and the
+    #       image was already in use. That sequence is the first example in the
+    #       README, so it had never worked. Worse, where it did run, a
+    #       foreground session stops the environment when the command exits,
+    #       which killed the very server it had just started.
+    if read_supervisor "$DEBDROID_PID" 2> /dev/null; then
+        DEBDROIDMGR_MODE=attach
+        export DEBDROIDMGR_MODE
+    fi
+
     # Forwards anything after the script name, so a command script can be driven
     # without a prompt
     # NOTE: An exported variable cannot be used for this. The session starts

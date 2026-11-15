@@ -71,6 +71,12 @@ to the script, which is how a script runs without prompting:
 debdroid.sh command user alice
 ```
 
+If a background environment is running, the script runs in that one, exactly as
+`attach` would. That is what makes starting a server work: a script run in a
+foreground session would be shut down along with the session it started in.
+With nothing running, the script gets a foreground session of its own, which
+ends when it does.
+
 | Script | Does |
 | --- | --- |
 | `update` | `apt update && apt upgrade` inside debian |
