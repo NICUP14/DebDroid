@@ -174,8 +174,18 @@ project did not keep a changelog before 1.2.6.
   step when the backup is too incomplete to replace them. Your `environment`,
   `debdroid.conf`, the debian image and the command directory are never
   touched.
+- **A failed bootstrap was reported as a success.** `debinit` pipes its output
+  through `tee`, and a pipeline reports its last command, so it almost always
+  exited 0. The manager runs it as `sh debinit && <your command>`, so that
+  `&&` was holding nothing back: a broken bootstrap carried straight on. The
+  status now survives the pipe.
+- The swap warning pointed at `debdroid.sh command swap`, which has never
+  existed. The command is `debdroid.sh swap create`.
 - `debdroid.sh uninstall` left `debdroid_swap.sh` and `debdroid_image.sh`
   behind, as both were missing from the list of scripts it removes.
+- Removed an unused downloader from the updater. Nothing called it, and it
+  carried a plain-http fallback, so it read as a feature that existed and was
+  a trap for whoever wires up online updates later.
 - **The slim module could not download the image, so a first install from it
   failed.** That is the zip the module manager points at and the one the
   install guide recommends, and it had never worked on any device. The two HTTP

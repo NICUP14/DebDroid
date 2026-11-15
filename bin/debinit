@@ -8,11 +8,23 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-# Logs script activity to /tmp/init.log
+# Logs script activity to /tmp/debinit.log, without hiding how it went
+# NOTE: The exit status has to survive the pipe. A pipeline reports its last
+#       command, so this used to return tee's status, which is success almost
+#       always. That matters because the manager runs this as
+#       "sh debinit && <the user's command>": with the failure swallowed, the
+#       "&&" never held anything back and a broken bootstrap carried straight
+#       on to the user's command.
+# NOTE: POSIX has no PIPESTATUS, and the shebang does not apply here because
+#       both call sites run this as "sh /debdroid/bin/debinit", so the status
+#       goes through a file instead.
 if [ -z "$DEBDROID_INIT" ]; then
   export DEBDROID_INIT=1
-  # shellcheck disable=SC2068
-  exec sh -c 'exec "$0" $@ 2>&1 | tee /tmp/debinit.log' "$0" $@
+  exec sh -c '
+    { "$0" "$@" 2>&1; echo $? > /tmp/debinit.status; } | tee /tmp/debinit.log
+    read -r debinit_status < /tmp/debinit.status || debinit_status=1
+    exit "$debinit_status"
+  ' "$0" "$@"
 fi
 
 # Loads the debdroid environment file

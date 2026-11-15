@@ -114,6 +114,25 @@ published release, listed here rather than left in someone's head.
       downloads the published asset, lands on exactly the manifest checksum,
       and the suite passes 73 on the result.
 
+- [ ] **The session's DNS is never the device's on android 8 or later.**
+      `debdroid_mgr.sh` reads the nameservers from the `net.dns1` to `net.dns4`
+      properties. Android 8 removed them, so on a modern device the loop finds
+      nothing and every session falls back to `CONFIG_ENV_DNSSERVER`, which is
+      `1.1.1.1`. The session therefore ignores a VPN or a Private DNS setting,
+      and breaks outright on a network that blocks outside resolvers.
+
+      **Deferred past 1.2.6 deliberately.** The android 7 device this was
+      found on still has the old properties, so the replacement cannot be
+      exercised here, and the fallback does at least resolve. Shipping an
+      unverifiable rewrite of the resolver path is what the rest of this
+      release argued against.
+
+      The fix is not a one-liner: `dumpsys connectivity` carries the real
+      servers but its output is not stable across versions, so it needs a
+      tolerant parser, each candidate validated as an address before being
+      written, and the current behaviour kept underneath. Worth pairing with
+      the android 10 testing above, since that is the same device gap.
+
 Defects that have been seen but not diagnosed. They are listed here rather than
 under a target version, because what it takes to fix them is not known yet.
 
@@ -192,9 +211,11 @@ Distribution is the theme: get the repository down to scripts and recipes.
       verifies it and builds the image without asking anything. Nobody
       installing DebDroid should ever meet debootstrap or a manifest.
 - [ ] Move the image and binaries out of git to release assets.
-      Note this only stops future bloat; reclaiming the 170 MB already in
-      history needs a rewrite, which breaks existing clones and forks, so it is
-      a decision to take deliberately at a release boundary.
+      Note this only stops future bloat; reclaiming what is already in history
+      needs a rewrite, which breaks existing clones and forks, so it is a
+      decision to take deliberately at a release boundary. That cost grows with
+      every image refresh: `.git` is 328 MB as of the 12.15 refresh, against
+      170 MB before it, and the working tree carries another 1.1 GB in `img/`.
 - [ ] A one-line bootstrap installer, for people who would rather paste one
       command than use a file manager. A third option alongside the module and
       the zip, not a replacement for either.

@@ -84,31 +84,14 @@ require_idle()
     return 0
 }
 
-# Downloads a file, preferring https but accepting http when tls fails
-# Usage: fetch <url> <destination>
-# NOTE: Falling back to plain http is safe here only because the expected
-#       checksum comes from the repository rather than from the connection, so
-#       a forged payload still cannot pass verification. It is never silent, and
-#       it is never used for the manifest that carries the checksums.
-fetch()
-{
-    if $BUSYBOX wget -q -O "$2" "$1" 2> /dev/null; then
-        return 0
-    fi
-
-    case "$1" in
-        https://*)
-            warn "The secure download failed, retrying over plain http." \
-                "The bundle is still verified against the recorded checksum." \
-                "Old devices often have an outdated certificate store."
-            if $BUSYBOX wget -q -O "$2" "http://${1#https://}" 2> /dev/null; then
-                return 0
-            fi
-            ;;
-    esac
-
-    return 1
-}
+# NOTE: A "fetch" helper used to sit here, with a plain-http fallback, and
+#       nothing ever called it: this script only installs a bundle that is
+#       already on the device. It was removed rather than left in place,
+#       because an unused downloader that quietly accepts http is a trap for
+#       whoever wires up online updates later, and it read as though the
+#       feature existed. When that work happens, take the downloader from
+#       debdroid_image.sh, which is the one that is actually exercised, and
+#       keep the checksum coming from the repository rather than the server.
 
 # Compares a file against an expected sha256 checksum
 # Usage: verify <file> <expected-sha256>

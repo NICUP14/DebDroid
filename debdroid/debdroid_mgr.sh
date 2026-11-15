@@ -30,7 +30,7 @@ CONFIG_ENV_DNSSERVER=1.1.1.1 # Fallback dns server (Cloudflare)
 # Holds a wakelock for the session, so the device keeps serving while asleep
 CONFIG_ENV_WAKELOCK=yes
 
-# Enables a swapfile for the session, created by "debdroid.sh command swap"
+# Enables a swapfile for the session, created by "debdroid.sh swap create"
 # NOTE: Off by default, as the swapfile takes gigabytes of internal storage.
 CONFIG_ENV_SWAP=no
 CONFIG_ENV_SWAPPINESS=60 # How eagerly the kernel swaps [0 - 100]
@@ -175,8 +175,11 @@ enable_swap()
     [ "$CONFIG_ENV_SWAP" = "yes" ] || return 0
 
     if [ ! -f "$DEBDROID_SWAP" ]; then
+        # NOTE: Not "command swap". That named a script in command/ that has
+        #       never existed, and those run inside debian anyway; swap belongs
+        #       to the device, so it is its own option on the frontend.
         warn "Swap is enabled but no swapfile exists, continuing without it." \
-            "Create it first: \"debdroid.sh command swap\""
+            "Create it first: \"debdroid.sh swap create 2G\""
         return 0
     fi
 
