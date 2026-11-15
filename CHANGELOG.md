@@ -186,6 +186,10 @@ project did not keep a changelog before 1.2.6.
 - Removed an unused downloader from the updater. Nothing called it, and it
   carried a plain-http fallback, so it read as a feature that existed and was
   a trap for whoever wires up online updates later.
+- The device test suite reported a held lock as a failure, telling anyone who
+  ran it without stopping their environment that a second session could corrupt
+  the image. A running session holding that lock is the lock working, so it
+  skips with the reason now, as the session checks beside it already did.
 - **The slim module could not download the image, so a first install from it
   failed.** That is the zip the module manager points at and the one the
   install guide recommends, and it had never worked on any device. The two HTTP

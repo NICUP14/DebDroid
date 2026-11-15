@@ -214,8 +214,21 @@ else
 fi
 
 # The lock is what prevents a second session from corrupting the image
+# NOTE: A running session holds this lock, which is the lock working rather
+#       than failing. Taking the refusal as a fault reported "a second session
+#       could corrupt the image" to anyone who ran the suite without stopping
+#       their environment first, which is alarming and exactly backwards. The
+#       session checks further down already skip for the same reason.
 if ( $BUSYBOX flock -n 9 ) 9> "$DEBDROID_LOCK" 2>/dev/null; then
     t_ok "advisory locking works"
+elif read_supervisor "$DEBDROID_PID" 2>/dev/null; then
+    t_skip "advisory locking works" \
+        "A background environment holds the lock, which is it working." \
+        "Stop it with \"debdroid.sh stop\" to check this."
+elif [ -e "$DEBDROID_LOCK" ]; then
+    t_skip "advisory locking works" \
+        "A session holds the lock, which is it working." \
+        "Exit it to check this."
 else
     t_no "advisory locking works" \
         "\"busybox flock\" failed, so a second session could corrupt the image."
