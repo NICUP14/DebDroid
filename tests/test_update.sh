@@ -76,46 +76,83 @@ fi
 
 t_section "migrating flags out of an older manager"
 
+eval "$(sed -n '/^config_value()/,/^}/p' "$REPO_ROOT"/install.sh)"
 eval "$(sed -n '/^migrate_manager_flags()/,/^}/p' "$REPO_ROOT"/install.sh)"
 
 MIG="$TEST_TMP"/migrate
 mkdir -p "$MIG"
 
-# An installed manager from before the split, with one flag changed
+# What this release ships, comments and an empty value included
+cat > "$MIG"/new_mgr.sh << 'NEWMGR'
+#!/system/bin/sh
+# Debdroid Manager configuration parameters
+CONFIG_DEV_FD=yes
+CONFIG_ENV_SWAP=no
+CONFIG_ENV_SWAPPINESS=60 # How eagerly the kernel swaps [0 - 100]
+CONFIG_ENV_SWAP_PRIO=    # Swap priority, empty places it below any zram
+CONFIG_ENV_GONE=yes
+start_environment() { :; }
+NEWMGR
+
+# An installed manager from before the split, with two flags changed
 cat > "$MIG"/old_mgr.sh << 'OLDMGR'
 #!/system/bin/sh
 # Debdroid Manager configuration parameters
 CONFIG_DEV_FD=yes
 CONFIG_ENV_SWAP=yes
-CONFIG_ENV_SWAPPINESS=10
+CONFIG_ENV_SWAPPINESS=10 # How eagerly the kernel swaps [0 - 100]
+CONFIG_ENV_SWAP_PRIO=    # Swap priority, empty places it below any zram
 # not a flag
 start_environment() { :; }
 OLDMGR
 
-migrate_manager_flags "$MIG"/debdroid.conf "$MIG"/old_mgr.sh > /dev/null 2>&1
+migrate_manager_flags "$MIG"/debdroid.conf "$MIG"/old_mgr.sh \
+    "$MIG"/new_mgr.sh > /dev/null 2>&1
 
 t_true "it creates the conf" test -f "$MIG"/debdroid.conf
-t_true "it carries the changed flag over" \
-    "$BUSYBOX" grep -q '^CONFIG_ENV_SWAP=yes' "$MIG"/debdroid.conf
-t_true "it carries every flag over" \
-    "$BUSYBOX" grep -q '^CONFIG_ENV_SWAPPINESS=10' "$MIG"/debdroid.conf
+t_true "it carries a changed flag over" \
+    "$BUSYBOX" grep -q '^CONFIG_ENV_SWAP=yes$' "$MIG"/debdroid.conf
+t_true "it carries a changed number over, without its comment" \
+    "$BUSYBOX" grep -q '^CONFIG_ENV_SWAPPINESS=10$' "$MIG"/debdroid.conf
 t_false "it copies nothing but flags" \
     "$BUSYBOX" grep -q 'start_environment' "$MIG"/debdroid.conf
 
+# NOTE: This is the flaw the published zip exposed. Copying the whole block
+#       wrote out flags identical to the defaults, which pinned them: a later
+#       release improving one would have been overridden by a file the user
+#       never created.
+t_false "it leaves a flag that still matches the default" \
+    "$BUSYBOX" grep -q 'CONFIG_DEV_FD' "$MIG"/debdroid.conf
+t_false "an empty value that matches the default is left too" \
+    "$BUSYBOX" grep -q 'CONFIG_ENV_SWAP_PRIO' "$MIG"/debdroid.conf
+t_false "a flag this version dropped is not carried over" \
+    "$BUSYBOX" grep -q 'CONFIG_ENV_GONE' "$MIG"/debdroid.conf
+t_eq "so only the two changed flags are written" \
+    "2" "$("$BUSYBOX" grep -c '^CONFIG_' "$MIG"/debdroid.conf)"
+
+# An install whose flags are all stock needs no conf at all
+rm -f "$MIG"/debdroid.conf
+migrate_manager_flags "$MIG"/debdroid.conf "$MIG"/new_mgr.sh \
+    "$MIG"/new_mgr.sh > /dev/null 2>&1
+t_false "an untouched install produces no conf" test -e "$MIG"/debdroid.conf
+
 # Running again must not touch what the user has since edited
 echo 'CONFIG_ENV_SWAP=no' > "$MIG"/debdroid.conf
-migrate_manager_flags "$MIG"/debdroid.conf "$MIG"/old_mgr.sh > /dev/null 2>&1
+migrate_manager_flags "$MIG"/debdroid.conf "$MIG"/old_mgr.sh \
+    "$MIG"/new_mgr.sh > /dev/null 2>&1
 t_eq "an existing conf is left alone" \
     "CONFIG_ENV_SWAP=no" "$(cat "$MIG"/debdroid.conf)"
 
 # A fresh install has no old manager to read
 rm -f "$MIG"/debdroid.conf
-migrate_manager_flags "$MIG"/debdroid.conf "$MIG"/absent.sh > /dev/null 2>&1
+migrate_manager_flags "$MIG"/debdroid.conf "$MIG"/absent.sh \
+    "$MIG"/new_mgr.sh > /dev/null 2>&1
 t_false "a fresh install produces no conf" test -e "$MIG"/debdroid.conf
 
 # A manager with no flags at all leaves nothing behind
 echo '#!/system/bin/sh' > "$MIG"/flagless.sh
-migrate_manager_flags "$MIG"/debdroid.conf "$MIG"/flagless.sh > /dev/null 2>&1
+migrate_manager_flags "$MIG"/debdroid.conf "$MIG"/flagless.sh \
+    "$MIG"/new_mgr.sh > /dev/null 2>&1
 t_false "a manager with no flags produces no conf" test -e "$MIG"/debdroid.conf
 
 t_section "rollback restores the version it recorded"

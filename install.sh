@@ -84,19 +84,34 @@ mkdir -p "$DEBDROID_SDHOME" \
 
 cp -r ./command "$DEBDROID_SDHOME"
 
+# Reads a CONFIG flag's value out of a manager script, without its comment
+# Usage: config_value <name> <file>
+config_value()
+{
+    $BUSYBOX sed -n "s/^$1=\([^#]*\).*/\1/p" "$2" 2> /dev/null |
+        $BUSYBOX head -n 1 | $BUSYBOX sed 's/[ \t]*$//'
+}
+
 # Rescues manager flags that an earlier version kept inside debdroid_mgr.sh
-# Usage: migrate_manager_flags <conf> <installed-manager>
+# Usage: migrate_manager_flags <conf> <installed-manager> <new-manager>
 # NOTE: The flags used to live at the top of the manager, which is replaced on
 #       every update, so any change to them was lost. They belong in
 #       debdroid.conf now. This moves an existing device's settings over once,
 #       because otherwise the update that fixes the problem would be the last
 #       one to cause it.
+# NOTE: Only the flags that differ from the new defaults are carried over, and
+#       no file is written when none do. Copying the whole block looked
+#       harmless, since the values matched, but it pinned every default
+#       forever: a later release that improved one would have been overridden
+#       by a file the user never asked for. This also keeps the conf to the
+#       handful of lines the reference tells people to write by hand.
 # NOTE: Only ever creates the file. An existing conf is the user's, and nothing
 #       here or below writes to it.
 migrate_manager_flags()
 {
     [ -f "$1" ] && return 0
     [ -f "$2" ] || return 0
+    [ -f "$3" ] || return 0
 
     # An unreadable manager is reported rather than guessed at, as silently
     # installing defaults over someone's settings is the bug being fixed
@@ -107,22 +122,36 @@ migrate_manager_flags()
         return 0
     fi
 
-    migrate_flags=$($BUSYBOX grep '^CONFIG_[A-Z_]*=' "$2" 2> /dev/null)
-    [ -n "$migrate_flags" ] || return 0
+    migrate_kept=
+    for migrate_name in $($BUSYBOX sed -n 's/^\(CONFIG_[A-Z_]*\)=.*/\1/p' "$2"); do
+        # A flag this version no longer has is not worth carrying over
+        $BUSYBOX grep -q "^$migrate_name=" "$3" || continue
 
-    step "Moving your manager flags into \"debdroid.conf\""
+        migrate_was=$(config_value "$migrate_name" "$2")
+        [ "$migrate_was" = "$(config_value "$migrate_name" "$3")" ] && continue
+
+        migrate_kept="$migrate_kept$migrate_name=$migrate_was
+"
+    done
+
+    [ -n "$migrate_kept" ] || return 0
+
+    step "Keeping the flags you changed, in \"debdroid.conf\""
     {
         echo "# Your DebDroid manager flags."
         echo "#"
         echo "# Moved here automatically from debdroid_mgr.sh, which is"
-        echo "# replaced on every update. This file never is."
+        echo "# replaced on every update. This file never is. Only the flags"
+        echo "# you had changed are listed; everything else follows the"
+        echo "# defaults in debdroid_mgr.sh."
         echo
-        echo "$migrate_flags"
+        printf '%s' "$migrate_kept"
     } > "$1"
 }
 
 migrate_manager_flags "$DEBDROID_SDHOME"/debdroid.conf \
-    "$DEBDROID_SDHOME"/debdroid_mgr.sh
+    "$DEBDROID_SDHOME"/debdroid_mgr.sh \
+    ./debdroid/debdroid_mgr.sh
 
 # Installs the scripts, keeping the files the user is meant to edit
 # NOTE: Earlier versions overwrote "environment" and "debdroid_env.sh" on every

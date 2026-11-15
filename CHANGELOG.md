@@ -149,6 +149,9 @@ project did not keep a changelog before 1.2.6.
   and nothing for a later change to forget to preserve. The defaults stay in the
   manager as code, the conf overrides them, and an update carries the flags out
   of an older manager into the new file once so nobody loses what they had set.
+  Only the flags that differ from the new defaults are carried over, and no
+  file is written when none do, so an untouched install stays on the shipped
+  defaults and a later release is still free to improve one.
 - **The reported version never changed after an update.** `DEBDROID_VER` lived
   in `debdroid_env.sh`, which the installer preserves because the paths in it
   are the user's to change, so the version froze at whatever was first
