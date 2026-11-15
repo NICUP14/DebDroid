@@ -2,7 +2,8 @@
 
 # Configuration
 
-Three files, with different purposes. None of them is overwritten by an update.
+Three files, with different purposes. An update never touches `debdroid.conf`,
+and keeps the other two whenever you changed a setting in them.
 
 | File | Holds |
 | --- | --- |
@@ -10,8 +11,10 @@ Three files, with different purposes. None of them is overwritten by an update.
 | `/sdcard/debdroid/debdroid_env.sh` | Paths and variables the scripts share |
 | `/sdcard/debdroid/environment` | Variables exported inside the debian session |
 
-For the two that ship, an update saves its own version beside yours as `.new`,
-so a changed default can be compared. `debdroid.conf` is not shipped at all,
+For the two that ship, an update replaces a file you never changed. If a
+setting in it differs, yours is kept and the new version is saved beside it as
+`.new`, so a changed default can be compared. `debdroid.conf` is not shipped at
+all,
 which is what makes it safe: there is no newer copy of it to arrive.
 
 > [!IMPORTANT]
@@ -25,6 +28,9 @@ which is what makes it safe: there is no newer copy of it to arrive.
 Create `/sdcard/debdroid/debdroid.conf` and set only the flags you want to
 change. Values are `yes`, `no` or a number, and they take effect on the next
 session start. Anything you leave out keeps its default.
+
+The app's Settings screen writes this same file, and only the flags you
+change, so the app and the terminal always agree.
 
 ```sh
 # /sdcard/debdroid/debdroid.conf
@@ -144,7 +150,8 @@ and cannot host swap.
 
 The session starts a clean login shell that inherits nothing from android, so
 any variable you want inside debian goes in `/sdcard/debdroid/environment`,
-which the bootstrap sources:
+which the bootstrap sources. In the app, Manage → **Environment variables**
+edits it. For example:
 
 ```sh
 export TMPDIR=/tmp

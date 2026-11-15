@@ -20,6 +20,48 @@ BUSYBOX=$FAKE_BUSYBOX
 
 REPO_ROOT=${TESTS_DIR%/tests}
 
+t_section "a preserved file is kept only when the user changed it"
+
+eval "$(sed -n '/^settings_of()/,/^}/p' "$REPO_ROOT"/install.sh)"
+eval "$(sed -n '/^settings_unchanged()/,/^}/p' "$REPO_ROOT"/install.sh)"
+
+PRES="$TEST_TMP"/preserve
+mkdir -p "$PRES"
+cp "$REPO_ROOT"/debdroid/debdroid_env.sh "$PRES"/new_env.sh
+
+# An old shipped default: different comments, a stale version, no edits
+# NOTE: This is the file a real device had kept since before the version moved
+#       out of it. It was preserved on every update and never replaced.
+{
+    echo '#!/system/bin/sh'
+    echo
+    echo "export DEBDROID_VER='1.2.5'"
+    $BUSYBOX grep -v -e '^#' -e '^$' "$PRES"/new_env.sh
+} > "$PRES"/old_default.sh
+t_true "an untouched old default counts as unchanged" \
+    settings_unchanged "$PRES"/old_default.sh "$PRES"/new_env.sh
+
+$BUSYBOX sed 's/[[:space:]]*$/   /' "$PRES"/new_env.sh > "$PRES"/spaces.sh
+t_true "trailing whitespace is not a change" \
+    settings_unchanged "$PRES"/spaces.sh "$PRES"/new_env.sh
+
+$BUSYBOX sed 's#^export DEBDROID_SDHOME=.*#export DEBDROID_SDHOME=/storage/emulated/0/dd#' \
+    "$PRES"/new_env.sh > "$PRES"/edited.sh
+t_false "a changed path is the user's and is kept" \
+    settings_unchanged "$PRES"/edited.sh "$PRES"/new_env.sh
+
+{ cat "$PRES"/new_env.sh; echo 'export EXTRA=1'; } > "$PRES"/added.sh
+t_false "an added setting is the user's and is kept" \
+    settings_unchanged "$PRES"/added.sh "$PRES"/new_env.sh
+
+if $BUSYBOX grep -A3 'environment|debdroid_env.sh)' "$REPO_ROOT"/install.sh |
+        $BUSYBOX grep -q 'settings_unchanged'; then
+    t_ok "the installer asks before keeping a preserved file"
+else
+    t_no "the installer asks before keeping a preserved file" \
+        "without it an untouched default is kept forever"
+fi
+
 t_section "the conf file is never part of the payload"
 
 # NOTE: This is the whole guarantee. A file that is never copied cannot be

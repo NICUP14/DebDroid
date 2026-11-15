@@ -1,7 +1,8 @@
 #!/system/bin/sh
 #
-# Paths the scripts share. The installer preserves this file across updates,
-# so anything in it is the user's to change.
+# Paths the scripts share, and the user's to change. Once a setting here is
+# changed, the installer keeps this file across updates and saves the new
+# default beside it as debdroid_env.sh.new; an unchanged file is updated.
 #
 # NOTE: DEBDROID_VER deliberately does not live here. Because this file is
 #       preserved, the version stayed at whatever was first installed. It is in

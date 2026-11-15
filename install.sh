@@ -153,6 +153,27 @@ migrate_manager_flags "$DEBDROID_SDHOME"/debdroid.conf \
     "$DEBDROID_SDHOME"/debdroid_mgr.sh \
     ./debdroid/debdroid_mgr.sh
 
+# Prints what a preserved file actually sets: no comments, no blank lines,
+# and no DEBDROID_VER left over from before the version moved out of it
+settings_of()
+{
+    $BUSYBOX sed -e 's/^[ \t]*//' -e 's/[ \t]*$//' "$1" 2> /dev/null |
+        $BUSYBOX grep -v -e '^#' -e '^$' -e '^export DEBDROID_VER='
+}
+
+# Checks whether the user changed anything in a preserved file
+# Usage: settings_unchanged <installed-file> <new-file>
+# NOTE: Preserving the file unconditionally could not tell an edited file from
+#       an untouched default, so a device that never changed a path kept an old
+#       default forever, a stale DEBDROID_VER with it, and got a new ".new"
+#       beside it on every update. Only the settings are compared, so a changed
+#       comment in the shipped file does not count as the user's edit, while
+#       any setting they did change keeps the file exactly as before.
+settings_unchanged()
+{
+    [ "$(settings_of "$1")" = "$(settings_of "$2")" ]
+}
+
 # Installs the scripts, keeping the files the user is meant to edit
 # NOTE: Earlier versions overwrote "environment" and "debdroid_env.sh" on every
 #       update, silently discarding any customization. A copy is kept as .bak so
@@ -167,9 +188,16 @@ for file in ./debdroid/*; do
     case "$name" in
         environment|debdroid_env.sh)
             if [ -f "$DEBDROID_SDHOME/$name" ]; then
-                step "Keeping your \"$name\" (new version saved as $name.new)"
-                cp "$file" "$DEBDROID_SDHOME/$name".new
-                continue
+                if settings_unchanged "$DEBDROID_SDHOME/$name" "$file"; then
+                    # Nothing of the user's is in it, so it takes the new
+                    # default, and a .new left by an earlier update goes
+                    step "Updating \"$name\", which held none of your changes"
+                    rm -f "$DEBDROID_SDHOME/$name".new
+                else
+                    step "Keeping your \"$name\" (new version saved as $name.new)"
+                    cp "$file" "$DEBDROID_SDHOME/$name".new
+                    continue
+                fi
             fi
             ;;
     esac

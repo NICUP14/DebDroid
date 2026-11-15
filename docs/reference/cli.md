@@ -146,7 +146,10 @@ Updates DebDroid itself. To update debian, use `command update` instead.
 
 Refuses to run while a session holds the lock. Verifies checksums before
 unpacking, backs up the current version first, and keeps `environment` and
-`debdroid_env.sh`.
+`debdroid_env.sh` when you changed a setting in them.
+
+No release asset fits `--offline FILE` yet. Until one does, update through the
+app or by flashing the newer module.
 
 ### `uninstall [--image] [--all] [--yes]`
 
