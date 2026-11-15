@@ -239,6 +239,24 @@ environment_state()
     fi
 }
 
+# Wraps a quoted session command so it owns the terminal it runs on
+# Usage: session_command <quoted-command>
+# Sets "DEBDROID_SESSION" to the command string, for "su -c" inside the chroot
+# NOTE: debian's "su -c" calls setsid() and leaves the command with no
+#       controlling terminal, so bash printed "no job control in this shell"
+#       and Ctrl-C never reached a running command: the terminal's foreground
+#       process group belonged to a session the command was no longer in.
+#       "setsid -c" makes the command a new session leader that takes the
+#       terminal back, and "-w" waits for it so its exit status is returned.
+# NOTE: Only when stdin is a terminal. "setsid -c" fails outright without one,
+#       and a command run through pipes (a script, the app's actions) needs no
+#       terminal anyway, so it runs exactly as it did before.
+# shellcheck disable=SC2034
+session_command()
+{
+    DEBDROID_SESSION="if [ -t 0 ] && command -v setsid > /dev/null 2>&1; then exec setsid -c -w $1; else exec $1; fi"
+}
+
 # Quotes the arguments into a single string that survives one shell evaluation
 # Sets "DEBDROID_QUOTED" to the quoted string, empty when given no arguments
 # NOTE: Single quotes protect every character except a single quote itself, which

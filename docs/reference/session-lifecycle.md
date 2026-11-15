@@ -21,7 +21,11 @@
 3. Sets the traps.
 4. `start_environment`: checks the image, loop-mounts it, mounts the android
    filesystems, writes the config files, takes the wakelock, enables swap.
-5. Runs the command through `chroot ... /bin/su - -c "umask 022 && ..."`.
+5. Runs the command through `chroot ... /bin/su - -c "umask 022 && ..."`,
+   wrapped by `session_command`. When stdin is a terminal it runs under
+   `setsid -c -w`, so the command takes the terminal back and job control and
+   Ctrl-C work; debian's `su -c` would otherwise leave it with none. Through a
+   pipe it runs unchanged.
 
 ### On exit
 
@@ -49,7 +53,8 @@ runs the bootstrap once, and blocks.
 
 `attach` then enters that namespace with `nsenter --mount --target <pid>` and
 chroots, skipping the check, the mounts and the bootstrap entirely, which is
-why attaching is near-instant compared to a fresh `run`.
+why attaching is near-instant compared to a fresh `run`. The command goes
+through the same `session_command` wrapper.
 
 `stop` signals the supervisor, whose existing traps do all the teardown. There
 is no second cleanup path.

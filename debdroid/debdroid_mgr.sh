@@ -586,8 +586,10 @@ attach_environment()
     [ $# -eq 0 ] && set -- /bin/su
     shell_quote "$@"
 
+    session_command "$DEBDROID_QUOTED"
+
     $BUSYBOX nsenter --mount --target "$supervisor_pid" -- \
-        "$BUSYBOX" chroot "$DEBDROIDMGR_ENV" /bin/su - -c "umask 022 && $DEBDROID_QUOTED"
+        "$BUSYBOX" chroot "$DEBDROIDMGR_ENV" /bin/su - -c "umask 022 && $DEBDROID_SESSION"
 }
 
 # Stops the background environment by signaling its supervisor
@@ -833,5 +835,6 @@ else
     # NOTE: Resets the umask, as Android root shells often use 077, which makes new files private
     step "Running chroot command: \"$*\""
     echo
-    $BUSYBOX chroot "$DEBDROIDMGR_ENV" /bin/su - -c "umask 022 && sh /debdroid/bin/debinit && $DEBDROIDMGR_EXEC"
+    session_command "$DEBDROIDMGR_EXEC"
+    $BUSYBOX chroot "$DEBDROIDMGR_ENV" /bin/su - -c "umask 022 && sh /debdroid/bin/debinit && $DEBDROID_SESSION"
 fi
