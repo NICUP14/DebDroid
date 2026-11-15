@@ -114,6 +114,47 @@ published release, listed here rather than left in someone's head.
       downloads the published asset, lands on exactly the manifest checksum,
       and the suite passes 73 on the result.
 
+- [ ] **A foreground session orphaned from its terminal holds the image lock,
+      and nothing can clear it.** Seen on android 7.0 on 2026-11-15: a
+      `debdroid.sh run` with no command, so an interactive login shell, outlived
+      the terminal that started it and sat on `/dev/pts/3` with nobody reading
+      it. The lock fd is inherited by every descendant, so the lock stayed held.
+      `status` reported "A foreground session is using the debian image" and
+      every attempt to start refused, correctly. Nothing had leaked: no mounts
+      in the real root, android's `/dev` untouched, and the image clean once it
+      was cleared.
+
+      **There is no recovery command.** `debdroid.sh stop` only handles the
+      background environment, because it works from the pid file and a
+      foreground session writes none. So the only ways out are a reboot or
+      finding and killing the process by hand, neither of which is documented.
+      This is the same shape as the pid-file orphaning fixed in 1.2.6, on the
+      lock side instead.
+
+      The manual clear, for anyone who hits it before this is fixed: find the
+      session with
+      `busybox ps -o pid,args | grep debdroid_mgr`, then `kill -TERM` the
+      innermost `/bin/su` rather than the manager, so the manager runs its
+      normal teardown as it would on a clean exit.
+
+      Notes for whoever fixes it, because both cost time to work out:
+
+      - `signal_environment` in `debdroid_mgr.sh` cannot be reused as it
+        stands. It compares each process against `/proc/$$/ns/mnt`, its *own*
+        namespace, so it only works from inside the session. A recovery path
+        runs from outside it.
+      - `/proc/locks` is not enough on its own. It names the process that first
+        took the lock, which is usually already dead, since the fd was
+        inherited. It pointed at a dead pid in the observed case.
+      - The primitive that does work is already in the tree: `report_status`
+        finds a session's mounts with
+        `awk -v env="$DEBDROIDMGR_ENV" '$2 == env || index($2, env "/") == 1'
+        /proc/<pid>/mounts`. Scanning processes for that identifies session
+        processes in either mode without needing a pid file.
+
+      Prefer teaching `stop` to handle it over adding a verb, since `stop` is
+      what a user will reach for, and have it say what it is stopping.
+
 - [ ] **`self-update` has no artifact it can install.** Both routes it offers
       are dead ends for anyone following the help text:
 
