@@ -1,10 +1,13 @@
 #!/bin/sh
 # check-version.sh: Checks that every file naming a version agrees
 #
-# DEBDROID_VER in debdroid/debdroid_env.sh is the single source of truth. The
+# DEBDROID_VER in debdroid/debdroid_lib.sh is the single source of truth. The
 # version is repeated in a few places that matter, and a stale copy is worse
 # than no copy: module.prop drives the module update check, and TODO.md is
 # where the roadmap is tracked.
+#
+# NOTE: It used to live in debdroid_env.sh, which the installer preserves, so
+#       an updated device kept reporting its old version.
 #
 # Usage: sh tools/check-version.sh
 
@@ -21,11 +24,21 @@ fail()
     failed=$((failed + 1))
 }
 
-VERSION=$(sed -n "s/^export DEBDROID_VER='\(.*\)'$/\1/p" debdroid/debdroid_env.sh)
+VERSION=$(sed -n "s/^export DEBDROID_VER='\(.*\)'$/\1/p" debdroid/debdroid_lib.sh)
 
 if [ -z "$VERSION" ]; then
-    echo "Error: Could not read DEBDROID_VER from debdroid/debdroid_env.sh." >&2
+    echo "Error: Could not read DEBDROID_VER from debdroid/debdroid_lib.sh." >&2
     exit 1
+fi
+
+# The old home of the version, which the installer preserves. A copy left there
+# would be sourced first and then overridden, which is harmless, but it would
+# also be stale and misleading to anyone reading it.
+if grep -q '^export DEBDROID_VER=' debdroid/debdroid_env.sh; then
+    fail "debdroid/debdroid_env.sh" \
+        "still defines DEBDROID_VER" \
+        "the installer preserves this file, so a version in it goes stale" \
+        "the source of truth is debdroid/debdroid_lib.sh"
 fi
 
 echo ":: Source of truth: DEBDROID_VER = $VERSION"

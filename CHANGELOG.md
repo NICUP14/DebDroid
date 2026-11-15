@@ -1,7 +1,7 @@
 # Changelog
 
 All notable changes to DebDroid are recorded here. Versions follow
-`MAJOR.MINOR.PATCH`, and `DEBDROID_VER` in `debdroid/debdroid_env.sh` is the
+`MAJOR.MINOR.PATCH`, and `DEBDROID_VER` in `debdroid/debdroid_lib.sh` is the
 single source of truth for the installed version.
 
 Entries for 1.2.5 and earlier are reconstructed from the commit history, as the
@@ -139,6 +139,26 @@ project did not keep a changelog before 1.2.6.
 - The module set `service.sh` to 0755 and then ran a recursive permission pass
   that reset it to 0644, so the explicit mode did nothing. Harmless, as Magisk
   runs service scripts through `sh`, but the ordering is fixed.
+- **Your configuration flags were discarded by every update.**
+  `docs/reference/configuration.md` said to edit the `CONFIG_*` block at the top
+  of `debdroid_mgr.sh`, and the installer replaces that file, so following the
+  documentation lost the settings on the next update. The page also contradicted
+  itself, announcing "two files" above a table of three. The flags now live in
+  `/sdcard/debdroid/debdroid.conf`, which **is not shipped at all**: the
+  installer has no code path that writes it, so there is nothing to overwrite
+  and nothing for a later change to forget to preserve. The defaults stay in the
+  manager as code, the conf overrides them, and an update carries the flags out
+  of an older manager into the new file once so nobody loses what they had set.
+- **The reported version never changed after an update.** `DEBDROID_VER` lived
+  in `debdroid_env.sh`, which the installer preserves because the paths in it
+  are the user's to change, so the version froze at whatever was first
+  installed. The help banner, the uninstall header and
+  `self-update --check` all reported it, and the backup directory was named
+  after it, so a rollback was filed under the wrong version. It now lives in
+  `debdroid_lib.sh`, which is always replaced, and `make version` fails if a
+  copy reappears in the preserved file.
+- `debdroid.sh uninstall` left `debdroid_swap.sh` and `debdroid_image.sh`
+  behind, as both were missing from the list of scripts it removes.
 - **The slim module could not download the image, so a first install from it
   failed.** That is the zip the module manager points at and the one the
   install guide recommends, and it had never worked on any device. The two HTTP

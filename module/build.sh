@@ -50,10 +50,10 @@ if ! command -v zip > /dev/null 2>&1; then
 fi
 
 VERSION=$(sed -n "s/^export DEBDROID_VER='\(.*\)'$/\1/p" \
-    "$REPO_DIR"/debdroid/debdroid_env.sh)
+    "$REPO_DIR"/debdroid/debdroid_lib.sh)
 
 if [ -z "$VERSION" ]; then
-    echo "Error: Could not read DEBDROID_VER from debdroid/debdroid_env.sh." >&2
+    echo "Error: Could not read DEBDROID_VER from debdroid/debdroid_lib.sh." >&2
     exit 1
 fi
 

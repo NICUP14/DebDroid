@@ -79,7 +79,7 @@ On device, two locations: `/sdcard/debdroid` (scripts, image) and
 | Background mode | `debdroid_mgr.sh` → `supervise_environment`, `attach_environment`, `stop_background`, `report_status`, `read_supervisor` |
 | A shared helper | `debdroid/debdroid_lib.sh`, plus `tests/test_lib.sh` |
 | Output wording or colour | `debdroid/debdroid_ui.sh`, `docs/reference/output.md` |
-| A config flag | `debdroid_mgr.sh` header block **and** `docs/reference/configuration.md` |
+| A config flag | `debdroid_mgr.sh` header block (the default) **and** the template in `docs/reference/configuration.md` |
 | A path or env variable | `debdroid/debdroid_env.sh`, `docs/reference/configuration.md` |
 | In-chroot bootstrap | `bin/debinit`, `docs/reference/patches.md` |
 | Something inside Debian | `command/*.sh` (these run in the chroot) |
@@ -147,7 +147,18 @@ path. `install.sh` re-points it at `./bin/busybox` afterwards because the
 installed one does not exist yet on a fresh install.
 
 **`debdroid_mgr.sh` sources no environment file.** Invoked directly, `BUSYBOX`
-must already be set or findable. Tests must pass it explicitly.
+must already be set or findable. Tests must pass it explicitly. The one thing it
+does source is `debdroid.conf`, beside itself, and only if it exists.
+
+**The `CONFIG_*` flags in `debdroid_mgr.sh` are defaults, not configuration.**
+The user's values go in `/sdcard/debdroid/debdroid.conf`, which overrides them.
+That file is **not shipped**, and `install.sh` has no code path that writes it:
+that is deliberate, and it is the whole fix. The flags used to be edited in the
+manager itself, which an update replaces, so every update silently discarded
+them. Do not add `debdroid.conf` to the payload or to the preserve list in
+`install.sh`, because a file that is never copied cannot be overwritten by
+someone forgetting to list it. `tests/test_envfiles.sh` asserts the installer
+leaves it alone; that test is the guarantee.
 
 **The supervisor's blocking loop is deliberate:**
 
@@ -369,12 +380,15 @@ say why: the exclusion list in the `Makefile` carries a reason per code.
 
 ## 7. Versions live in five files
 
-`DEBDROID_VER` in `debdroid/debdroid_env.sh` is the single source of truth.
+`DEBDROID_VER` in `debdroid/debdroid_lib.sh` is the single source of truth. It
+is **not** in `debdroid_env.sh`: the installer preserves that file, so a version
+there froze at whatever was first installed. `make version` fails if one
+reappears in it.
 `make version` checks the rest and CI runs it.
 
 | File | Holds |
 | --- | --- |
-| `debdroid/debdroid_env.sh` | `DEBDROID_VER`, the truth |
+| `debdroid/debdroid_lib.sh` | `DEBDROID_VER`, the truth |
 | `module/module.prop` | `version=v<X>` and `versionCode` (derived: 1.2.6 → 10206) |
 | `module/update.json` | the version the module manager polls |
 | `TODO.md` | `**Current version: vX**` plus a section per version |

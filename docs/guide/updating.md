@@ -58,7 +58,8 @@ sh install.sh
 
 It keeps your Debian install, and keeps `environment` and `debdroid_env.sh` if
 you have edited them. The new versions are saved alongside as `.new` so you can
-compare.
+compare. Your settings in `debdroid.conf` are kept too, and nothing is written
+beside them, because the update does not ship a copy of that file.
 
 ## Why downloads are checked
 

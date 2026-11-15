@@ -32,7 +32,7 @@ To delete the Debian install but keep your settings, use `--image` instead.
 | Removed | Kept unless you ask |
 | --- | --- |
 | Programs in `/data/local/debdroid` | The Debian install (`--image`) |
-| Scripts in `/sdcard/debdroid` | `environment` and `debdroid_env.sh` (`--all`) |
+| Scripts in `/sdcard/debdroid` | `environment`, `debdroid.conf` and `debdroid_env.sh` (`--all`) |
 | The swapfile | |
 | The start-at-boot hook | |
 

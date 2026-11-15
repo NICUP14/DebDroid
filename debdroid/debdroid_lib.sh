@@ -5,6 +5,18 @@
 # report through it. Only POSIX shell features and the bundled busybox are used,
 # as the android toolbox of older devices lacks most utilities.
 
+# The installed version, and the single source of truth for it
+# NOTE: This lives here rather than in debdroid_env.sh because the installer
+#       preserves that file across updates, as the paths in it are the user's
+#       to change. The version is not: keeping it there froze it at whatever
+#       was first installed, so the help text, "self-update --check" and the
+#       name of the backup directory all reported a version that had not been
+#       running for some time. This file is always replaced, so the value
+#       always matches the scripts beside it.
+# NOTE: Every entry point sources debdroid_env.sh before this file, so a
+#       DEBDROID_VER left behind in a preserved copy of it is overridden here.
+export DEBDROID_VER='1.2.6'
+
 # Locates the busybox binary, checking the popular install locations
 # Sets "BUSYBOX" unless it already points to an executable
 # NOTE: An unusable value is replaced, as debdroid_env.sh sets BUSYBOX to the

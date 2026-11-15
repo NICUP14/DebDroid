@@ -72,7 +72,7 @@ jobs:
       - name: Read the version
         id: version
         run: |
-          version=$(sed -n "s/^export DEBDROID_VER='\(.*\)'$/\1/p" debdroid/debdroid_env.sh)
+          version=$(sed -n "s/^export DEBDROID_VER='\(.*\)'$/\1/p" debdroid/debdroid_lib.sh)
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Publishing v$version"
 

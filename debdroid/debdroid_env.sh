@@ -1,6 +1,11 @@
 #!/system/bin/sh
-
-export DEBDROID_VER='1.2.6'
+#
+# Paths the scripts share. The installer preserves this file across updates,
+# so anything in it is the user's to change.
+#
+# NOTE: DEBDROID_VER deliberately does not live here. Because this file is
+#       preserved, the version stayed at whatever was first installed. It is in
+#       debdroid_lib.sh, which is always replaced.
 
 export DEBDROID_SDHOME=/sdcard/debdroid
 export DEBDROID_IMG="$DEBDROID_SDHOME"/img/debian.img

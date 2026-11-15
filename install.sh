@@ -84,10 +84,54 @@ mkdir -p "$DEBDROID_SDHOME" \
 
 cp -r ./command "$DEBDROID_SDHOME"
 
+# Rescues manager flags that an earlier version kept inside debdroid_mgr.sh
+# Usage: migrate_manager_flags <conf> <installed-manager>
+# NOTE: The flags used to live at the top of the manager, which is replaced on
+#       every update, so any change to them was lost. They belong in
+#       debdroid.conf now. This moves an existing device's settings over once,
+#       because otherwise the update that fixes the problem would be the last
+#       one to cause it.
+# NOTE: Only ever creates the file. An existing conf is the user's, and nothing
+#       here or below writes to it.
+migrate_manager_flags()
+{
+    [ -f "$1" ] && return 0
+    [ -f "$2" ] || return 0
+
+    # An unreadable manager is reported rather than guessed at, as silently
+    # installing defaults over someone's settings is the bug being fixed
+    if [ ! -r "$2" ]; then
+        warn "Cannot read \"$2\" to carry your flags over." \
+            "Any flags you changed there need setting again in:" \
+            "\"$1\""
+        return 0
+    fi
+
+    migrate_flags=$($BUSYBOX grep '^CONFIG_[A-Z_]*=' "$2" 2> /dev/null)
+    [ -n "$migrate_flags" ] || return 0
+
+    step "Moving your manager flags into \"debdroid.conf\""
+    {
+        echo "# Your DebDroid manager flags."
+        echo "#"
+        echo "# Moved here automatically from debdroid_mgr.sh, which is"
+        echo "# replaced on every update. This file never is."
+        echo
+        echo "$migrate_flags"
+    } > "$1"
+}
+
+migrate_manager_flags "$DEBDROID_SDHOME"/debdroid.conf \
+    "$DEBDROID_SDHOME"/debdroid_mgr.sh
+
 # Installs the scripts, keeping the files the user is meant to edit
 # NOTE: Earlier versions overwrote "environment" and "debdroid_env.sh" on every
 #       update, silently discarding any customization. A copy is kept as .bak so
 #       a changed default can still be compared against.
+# NOTE: "debdroid.conf" is deliberately absent from both this loop and the case
+#       below. It is not shipped, so there is nothing to copy and nothing to
+#       preserve. That is what keeps a user's flags safe from an update without
+#       depending on anyone remembering to list the file here.
 for file in ./debdroid/*; do
     name=${file##*/}
 

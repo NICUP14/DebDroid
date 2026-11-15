@@ -124,7 +124,7 @@ jobs:
       - name: Version matches the tag
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          version=$(sed -n "s/^export DEBDROID_VER='\(.*\)'$/\1/p" debdroid/debdroid_env.sh)
+          version=$(sed -n "s/^export DEBDROID_VER='\(.*\)'$/\1/p" debdroid/debdroid_lib.sh)
           tag=${GITHUB_REF#refs/tags/v}
           if [ "$version" != "$tag" ]; then
               echo "::error::DEBDROID_VER is $version but the tag is v$tag."

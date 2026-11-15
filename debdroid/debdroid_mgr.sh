@@ -1,6 +1,17 @@
 #!/system/bin/sh
 
 # Debdroid Manager configuration parameters
+#
+# These are the defaults, and they are code: this file is replaced on every
+# update. To change a flag, put it in "/sdcard/debdroid/debdroid.conf", which is
+# read at the bottom of this block and overrides anything here.
+#
+# NOTE: Editing the values below does work until the next update replaces them.
+#       That is exactly what used to happen: the documentation sent people here,
+#       and every update silently reset what they had set. The conf file is not
+#       shipped and the installer has no code path that writes it, so there is
+#       nothing to overwrite and nothing for a future change to forget.
+#       See docs/reference/configuration.md for a template to copy.
 CONFIG_DEV_FD=yes
 CONFIG_DEV_IO=yes
 CONFIG_DEV_LOOP=yes
@@ -38,6 +49,17 @@ for file in debdroid_ui.sh debdroid_lib.sh; do
     # shellcheck disable=SC1090
     . "$DEBDROIDMGR_DIR/$file"
 done
+
+# Applies the user's flags over the defaults above, when they have any
+# NOTE: Optional by design. Nothing ships this file and the installer never
+#       writes it, which is what makes a setting in it safe from an update.
+#       Looked up beside this script, the same way the helpers above are, so the
+#       host test suite runs against its own copy without picking up a conf from
+#       the device.
+if [ -f "$DEBDROIDMGR_DIR/debdroid.conf" ]; then
+    # shellcheck disable=SC1090,SC1091
+    . "$DEBDROIDMGR_DIR/debdroid.conf"
+fi
 
 # Mounts a filesystem under the environment, unless it is already mounted
 # Sets "mount_output" to the mount command's output

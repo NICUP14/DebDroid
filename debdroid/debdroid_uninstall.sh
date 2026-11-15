@@ -104,9 +104,9 @@ else
     step "Will keep the debian image: $DEBDROID_IMG"
 fi
 if [ "$REMOVE_CONFIG" = "yes" ]; then
-    step "Will delete your configuration: environment, debdroid_env.sh"
+    step "Will delete your configuration: environment, debdroid.conf, debdroid_env.sh"
 else
-    step "Will keep your configuration: environment, debdroid_env.sh"
+    step "Will keep your configuration: environment, debdroid.conf, debdroid_env.sh"
 fi
 
 if [ -f /data/adb/service.d/debdroid.sh ]; then
@@ -160,8 +160,11 @@ fi
 safe_remove "$DEBDROID_HOME" || exit 1
 
 # Removes the installed scripts, keeping whatever the user chose to keep
+# NOTE: Listed by name rather than globbed, so a config file the user chose to
+#       keep cannot be caught by a pattern.
 for name in debdroid.sh debdroid_mgr.sh debdroid_resize.sh debdroid_ui.sh \
-    debdroid_lib.sh debdroid_uninstall.sh debdroid_update.sh; do
+    debdroid_lib.sh debdroid_uninstall.sh debdroid_update.sh \
+    debdroid_swap.sh debdroid_image.sh; do
     [ -e "$DEBDROID_SDHOME/$name" ] && $BUSYBOX rm -f "$DEBDROID_SDHOME/$name"
 done
 step "Removed the scripts in $DEBDROID_SDHOME"
@@ -171,7 +174,10 @@ safe_remove "$DEBDROID_SDHOME"/tests
 safe_remove "$DEBDROID_SDHOME"/boot
 
 if [ "$REMOVE_CONFIG" = "yes" ]; then
+    # NOTE: "debdroid.conf" has no .new counterpart, as it is never shipped and
+    #       so never arrives alongside a newer version of itself.
     $BUSYBOX rm -f "$DEBDROID_SDHOME"/environment "$DEBDROID_SDHOME"/debdroid_env.sh \
+        "$DEBDROID_SDHOME"/debdroid.conf \
         "$DEBDROID_SDHOME"/environment.new "$DEBDROID_SDHOME"/debdroid_env.sh.new
     step "Removed your configuration files"
 fi
@@ -188,7 +194,9 @@ if [ "$REMOVE_IMAGE" != "yes" ] && [ -f "$DEBDROID_IMG" ]; then
     step "Your debian image was kept: $DEBDROID_IMG"
     step "Delete it by hand, or re-run with --image, to reclaim the space"
 fi
-if [ "$REMOVE_CONFIG" != "yes" ] && [ -f "$DEBDROID_SDHOME"/environment ]; then
+if [ "$REMOVE_CONFIG" != "yes" ] &&
+        { [ -f "$DEBDROID_SDHOME"/environment ] ||
+            [ -f "$DEBDROID_SDHOME"/debdroid.conf ]; }; then
     step "Your configuration was kept in $DEBDROID_SDHOME"
 fi
 if [ -d /data/adb/modules/debdroid ]; then

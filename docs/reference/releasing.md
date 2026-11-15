@@ -35,7 +35,9 @@ working branch fails fast and uploads nothing. Merge first, then tag.
 
 ## The version is in one place
 
-`DEBDROID_VER` in `debdroid/debdroid_env.sh` is the single source of truth.
+`DEBDROID_VER` in `debdroid/debdroid_lib.sh` is the single source of truth. It
+lives there rather than in `debdroid_env.sh` because the installer preserves
+that file, which left an updated device reporting its old version.
 
 Several other files repeat it, and a stale copy is worse than no copy:
 `module.prop` drives the module's update check, and `TODO.md` is where the
@@ -44,7 +46,7 @@ every push:
 
 | File | What it holds |
 | --- | --- |
-| `debdroid/debdroid_env.sh` | `DEBDROID_VER`, the source of truth |
+| `debdroid/debdroid_lib.sh` | `DEBDROID_VER`, the source of truth |
 | `module/module.prop` | `version=v<X>` and `versionCode` |
 | `module/update.json` | the version the module manager polls for |
 | `TODO.md` | the current version, and a section per version |
@@ -56,7 +58,7 @@ cannot be forgotten.
 
 ## Steps
 
-1. **Bump the version** in `debdroid/debdroid_env.sh`.
+1. **Bump the version** in `debdroid/debdroid_lib.sh`.
 2. **Update `module/module.prop`** and `module/update.json` to match.
 3. **Add a `CHANGELOG.md` section**, grouped into Added, Fixed and Changed.
    Say what the user-visible effect was, not just what changed. "The overlay

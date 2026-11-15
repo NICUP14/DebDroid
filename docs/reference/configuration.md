@@ -2,19 +2,56 @@
 
 # Configuration
 
-Two files, with different purposes. Both are preserved across updates, and the
-new versions land beside them as `.new` so a changed default can be compared.
+Three files, with different purposes. None of them is overwritten by an update.
 
 | File | Holds |
 | --- | --- |
-| `/sdcard/debdroid/debdroid_mgr.sh` | The `CONFIG_*` flags, at the top of the file |
+| `/sdcard/debdroid/debdroid.conf` | The `CONFIG_*` flags. You create this one |
 | `/sdcard/debdroid/debdroid_env.sh` | Paths and variables the scripts share |
 | `/sdcard/debdroid/environment` | Variables exported inside the debian session |
 
+For the two that ship, an update saves its own version beside yours as `.new`,
+so a changed default can be compared. `debdroid.conf` is not shipped at all,
+which is what makes it safe: there is no newer copy of it to arrive.
+
+> [!IMPORTANT]
+> `debdroid_mgr.sh` is **not** a configuration file, although it holds the
+> default flags and earlier versions of this page said to edit it. It is
+> replaced on every update. Editing it appears to work and then silently
+> reverts. Put your flags in `debdroid.conf`.
+
 ## Manager flags
 
-Edit the block at the top of `debdroid_mgr.sh`. Values are `yes`, `no` or a
-number, and they take effect on the next session start.
+Create `/sdcard/debdroid/debdroid.conf` and set only the flags you want to
+change. Values are `yes`, `no` or a number, and they take effect on the next
+session start. Anything you leave out keeps its default.
+
+```sh
+# /sdcard/debdroid/debdroid.conf
+# Every flag, with its default. Delete the lines you do not want to change.
+
+CONFIG_DEV_FD=yes
+CONFIG_DEV_IO=yes
+CONFIG_DEV_LOOP=yes
+CONFIG_DEV_OVERLAY=yes
+CONFIG_DEV_TMPFS=yes
+
+CONFIG_DEBDROID_BIN=yes
+CONFIG_DEBDROID_LIB=yes
+
+CONFIG_ENV_FSCK=yes
+CONFIG_ENV_APEX=yes
+CONFIG_ENV_SHMMAX=268435456
+CONFIG_ENV_DNSSERVER=1.1.1.1
+CONFIG_ENV_WAKELOCK=yes
+
+CONFIG_ENV_SWAP=no
+CONFIG_ENV_SWAPPINESS=60
+CONFIG_ENV_SWAP_PRIO=
+```
+
+The same defaults are also at the top of `debdroid_mgr.sh`, so the current
+values can always be read off the device rather than taken from this page.
 
 ### Device files
 
