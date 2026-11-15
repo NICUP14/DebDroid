@@ -210,6 +210,34 @@ Worth knowing for the opposite reason too: a refresh usually makes the image
 *smaller*, because `apt-get autoremove --purge` and `apt-get clean` take out
 more than a point release adds.
 
+### Rebuilding the image from scratch
+
+A refresh keeps whatever the image already is, mistakes included. The image
+1.2.6 first shipped descended from an AnLinux rootfs that had been unpacked
+without root, so every owner and mode was lost: `/usr` and `/etc` were writable
+by everyone and `su` had no setuid bit. No upgrade fixes that, so the image is
+now built fresh:
+
+```sh
+sudo sh rootfs/build-image.sh bookworm arm64 1G
+```
+
+It runs `rootfs/build.sh` for a debootstrap base, installs the package set the
+previous image carried, writes it into a new ext2 filesystem with `mke2fs -d`,
+and replaces `img/debian.img.part-*`. Then it prints the manifest line. WSL
+works, with `qemu-user-static` and binfmt support for arm64.
+
+This is the one place a modern `mke2fs` creates the shipped image, so the
+feature list is pinned: `-O none` first, so `mke2fs.conf` cannot add a default,
+then exactly the old-kernel-safe set. The script compares the result against
+that set with `dumpe2fs` and fails on any difference. `apt-get update` runs
+with `--error-on=any`, so an unreachable `bookworm-security` stops the build
+instead of quietly shipping an image without its security updates.
+
+The release workflow then checks the modes of a few paths that matter
+(`/usr`, `/etc`, `/root`, `/tmp`, `/var/tmp`, `/etc/shadow`, `su`), and
+refuses to publish if any is wrong.
+
 ## What must be true before tagging
 
 - `make all` passes.

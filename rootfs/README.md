@@ -3,9 +3,10 @@
 > [!IMPORTANT]
 > **This directory is maintainer tooling. Users never touch any of it.**
 >
-> Installing DebDroid is either one tap in a root app or three lines in a
-> terminal, and the debian filesystem arrives ready to use. Nobody installing
-> DebDroid runs `debootstrap`, builds a tarball, or reads this manifest.
+> Installing DebDroid is a few taps in the app, one tap in a root app, or
+> three lines in a terminal, and the debian filesystem arrives ready to use.
+> Nobody installing DebDroid runs `debootstrap`, builds a tarball, or reads
+> this manifest.
 >
 > See [the install guide](../docs/guide/install.md) for what users actually do.
 
@@ -66,6 +67,19 @@ sudo sh rootfs/build.sh bookworm arm64
 It runs `debootstrap` in two stages with `qemu-user-static` for foreign
 architectures, applies the DebDroid fixes, and writes a tarball plus its
 checksum. Add the result to the manifest, then `make provenance`.
+
+## Building the image
+
+The image that ships today is an `IMAGE` entry, built from the same base:
+
+```sh
+sudo sh rootfs/build-image.sh bookworm arm64 1G
+```
+
+It adds the packages the image has always carried, writes the tree into a new
+ext2 filesystem with the feature set pinned and checked, splits it into
+`img/debian.img.part-*`, and prints the manifest line. See
+[releasing](../docs/reference/releasing.md#rebuilding-the-image-from-scratch).
 
 ## Mirrors
 
