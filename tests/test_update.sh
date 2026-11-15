@@ -118,6 +118,109 @@ echo '#!/system/bin/sh' > "$MIG"/flagless.sh
 migrate_manager_flags "$MIG"/debdroid.conf "$MIG"/flagless.sh > /dev/null 2>&1
 t_false "a manager with no flags produces no conf" test -e "$MIG"/debdroid.conf
 
+t_section "rollback restores the version it recorded"
+
+# shellcheck disable=SC1091
+. "$TEST_SD"/debdroid_ui.sh
+
+# The updater refuses to run over a live environment; that is covered elsewhere
+require_idle() { return 0; }
+
+DEBDROID_BACKUP="$TEST_TMP"/backups
+DEBDROID_SDHOME="$TEST_TMP"/rollback_sd
+DEBDROID_BIN="$TEST_TMP"/rollback_bin
+DEBDROID_LIB="$TEST_TMP"/rollback_lib
+
+eval "$(sed -n '/^rollback_update()/,/^}/p' "$TEST_SD"/debdroid_update.sh)"
+
+# Lays out two backups whose names sort the wrong way round, which is the bug:
+# "ls | tail -n 1" picked 1.2.9 because it sorts after 1.2.10
+rollback_fixture()
+{
+    rm -rf "$DEBDROID_BACKUP" "$DEBDROID_SDHOME" "$DEBDROID_BIN" "$DEBDROID_LIB"
+    mkdir -p "$DEBDROID_SDHOME" "$DEBDROID_BIN" "$DEBDROID_LIB"
+
+    for version in 1.2.9 1.2.10; do
+        mkdir -p "$DEBDROID_BACKUP/$version"/scripts
+        for needed in debdroid.sh debdroid_mgr.sh debdroid_env.sh \
+            debdroid_ui.sh debdroid_lib.sh; do
+            echo "# v$version" > "$DEBDROID_BACKUP/$version/scripts/$needed"
+        done
+    done
+
+    echo "1.2.10" > "$DEBDROID_BACKUP"/previous
+}
+
+rollback_fixture
+rollback_update > /dev/null 2>&1
+t_eq "it restores the recorded version, not the one that sorts last" \
+    "# v1.2.10" "$(cat "$DEBDROID_SDHOME"/debdroid.sh)"
+
+# A backup taken before the pointer existed still has to roll back
+rollback_fixture
+rm -f "$DEBDROID_BACKUP"/previous
+rollback_update > /dev/null 2>&1
+t_true "it still works without a pointer file" test -f "$DEBDROID_SDHOME"/debdroid.sh
+
+# A pointer naming a backup that is gone must not stop the rollback
+rollback_fixture
+echo "9.9.9" > "$DEBDROID_BACKUP"/previous
+rollback_update > /dev/null 2>&1
+t_true "a stale pointer falls back to a real backup" \
+    test -f "$DEBDROID_SDHOME"/debdroid.sh
+
+t_section "rollback cannot take user data with it"
+
+rollback_fixture
+# Everything a rollback must leave alone, alongside a stale script it must clear
+echo "keep me" > "$DEBDROID_SDHOME"/environment
+echo "CONFIG_ENV_SWAP=yes" > "$DEBDROID_SDHOME"/debdroid.conf
+echo "manifest" > "$DEBDROID_SDHOME"/rootfs-manifest
+mkdir -p "$DEBDROID_SDHOME"/img "$DEBDROID_SDHOME"/command
+echo "the image" > "$DEBDROID_SDHOME"/img/debian.img
+echo "# added by a newer version" > "$DEBDROID_SDHOME"/debdroid_newthing.sh
+
+rollback_update > /dev/null 2>&1
+
+t_eq "it keeps environment" "keep me" "$(cat "$DEBDROID_SDHOME"/environment)"
+t_eq "it keeps debdroid.conf" \
+    "CONFIG_ENV_SWAP=yes" "$(cat "$DEBDROID_SDHOME"/debdroid.conf)"
+t_eq "it keeps the debian image" \
+    "the image" "$(cat "$DEBDROID_SDHOME"/img/debian.img)"
+t_true "it keeps rootfs-manifest" test -f "$DEBDROID_SDHOME"/rootfs-manifest
+t_true "it keeps the command directory" test -d "$DEBDROID_SDHOME"/command
+t_false "it clears a script the newer version added" \
+    test -e "$DEBDROID_SDHOME"/debdroid_newthing.sh
+
+# An incomplete backup must not clear the scripts, or recovery leaves nothing
+rollback_fixture
+rm -f "$DEBDROID_BACKUP"/1.2.10/scripts/debdroid_mgr.sh
+echo "# current" > "$DEBDROID_SDHOME"/debdroid_mgr.sh
+rollback_update > /dev/null 2>&1
+t_true "an incomplete backup leaves the current scripts in place" \
+    test -f "$DEBDROID_SDHOME"/debdroid_mgr.sh
+
+t_section "the backup records which version it holds"
+
+eval "$(sed -n '/^backup_installation()/,/^}/p' "$TEST_SD"/debdroid_update.sh)"
+
+rollback_fixture
+# shellcheck disable=SC2034
+# DEBDROID_VER is read by backup_installation, loaded from the product script.
+DEBDROID_VER=1.2.11
+echo "# current" > "$DEBDROID_SDHOME"/debdroid.sh
+backup_installation > /dev/null 2>&1
+
+t_eq "backup_installation records the version it saved" \
+    "1.2.11" "$(cat "$DEBDROID_BACKUP"/previous 2> /dev/null)"
+t_true "and the backup it points at exists" \
+    test -d "$DEBDROID_BACKUP"/1.2.11
+
+# Round trip: the pointer that was just written is the one rollback follows
+rollback_update > /dev/null 2>&1
+t_eq "rollback follows the pointer backup_installation wrote" \
+    "# current" "$(cat "$DEBDROID_SDHOME"/debdroid.sh)"
+
 t_section "the version is not in the file the installer preserves"
 
 t_true "the version is in debdroid_lib.sh" \

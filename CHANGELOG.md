@@ -157,6 +157,15 @@ project did not keep a changelog before 1.2.6.
   after it, so a rollback was filed under the wrong version. It now lives in
   `debdroid_lib.sh`, which is always replaced, and `make version` fails if a
   copy reappears in the preserved file.
+- **`self-update --rollback` could restore the wrong version.** It chose its
+  backup with `ls | tail -n 1`, which sorts lexically, so 1.2.9 was picked over
+  1.2.10. The version to restore is now recorded when the backup is taken, so
+  nothing has to be inferred from a directory listing. A rollback also only
+  copied over the top, leaving behind any script the newer version had added;
+  it now clears the project's own scripts first, and says so and skips that
+  step when the backup is too incomplete to replace them. Your `environment`,
+  `debdroid.conf`, the debian image and the command directory are never
+  touched.
 - `debdroid.sh uninstall` left `debdroid_swap.sh` and `debdroid_image.sh`
   behind, as both were missing from the list of scripts it removes.
 - **The slim module could not download the image, so a first install from it

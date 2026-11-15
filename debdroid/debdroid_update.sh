@@ -155,7 +155,28 @@ rollback_update()
         return 1
     fi
 
-    saved=$($BUSYBOX ls "$DEBDROID_BACKUP" 2> /dev/null | $BUSYBOX tail -n 1)
+    # The version to restore is recorded when the backup is taken
+    # NOTE: This used to be "ls | tail -n 1", which sorts lexically, so a
+    #       backup of 1.2.9 was picked over 1.2.10. A pointer written at backup
+    #       time needs no sorting at all, which also avoids depending on
+    #       whether the bundled busybox "sort" was built with -V.
+    saved=
+    if [ -f "$DEBDROID_BACKUP"/previous ]; then
+        saved=$($BUSYBOX cat "$DEBDROID_BACKUP"/previous 2> /dev/null)
+        saved=$(echo "$saved" | $BUSYBOX tr -d ' \t\r\n')
+    fi
+
+    # A backup from before the pointer existed still has to be usable
+    if [ -n "$saved" ] && [ ! -d "$DEBDROID_BACKUP/$saved" ]; then
+        warn "The recorded backup \"v$saved\" is missing, looking for another."
+        saved=
+    fi
+    if [ -z "$saved" ]; then
+        for candidate in "$DEBDROID_BACKUP"/*; do
+            [ -d "$candidate" ] && saved=${candidate##*/}
+        done
+    fi
+
     if [ -z "$saved" ]; then
         error "The backup directory is empty: \"$DEBDROID_BACKUP\""
         return 1
@@ -163,22 +184,56 @@ rollback_update()
 
     require_idle || return 1
 
+    restore="$DEBDROID_BACKUP/$saved"
+
+    # A rollback that only copies over the top leaves behind any script the
+    # newer version added, so the scripts are cleared first. That is only safe
+    # when the backup can actually replace them.
+    backup_complete=yes
+    for needed in debdroid.sh debdroid_mgr.sh debdroid_env.sh debdroid_ui.sh \
+        debdroid_lib.sh; do
+        [ -f "$restore"/scripts/"$needed" ] || backup_complete=no
+    done
+
     section "Rolling back to v$saved"
 
-    if [ -d "$DEBDROID_BACKUP/$saved"/bin ]; then
+    if [ -d "$restore"/bin ]; then
         step "Restoring the binaries"
-        $BUSYBOX cp -a "$DEBDROID_BACKUP/$saved"/bin/. "$DEBDROID_BIN"/
+        $BUSYBOX cp -a "$restore"/bin/. "$DEBDROID_BIN"/
     fi
-    if [ -d "$DEBDROID_BACKUP/$saved"/lib ]; then
+    if [ -d "$restore"/lib ]; then
         step "Restoring the libraries"
-        $BUSYBOX cp -a "$DEBDROID_BACKUP/$saved"/lib/. "$DEBDROID_LIB"/
+        $BUSYBOX cp -a "$restore"/lib/. "$DEBDROID_LIB"/
     fi
-    if [ -d "$DEBDROID_BACKUP/$saved"/scripts ]; then
+
+    if [ -d "$restore"/scripts ]; then
+        # NOTE: The glob is deliberately "debdroid*.sh". It covers every script
+        #       the project installs and cannot match "environment",
+        #       "debdroid.conf", "rootfs-manifest", "img/", "command/" or
+        #       "tests/", so a rollback cannot take the image or the user's
+        #       settings with it.
+        if [ "$backup_complete" = yes ]; then
+            step "Removing the newer scripts"
+            $BUSYBOX rm -f "$DEBDROID_SDHOME"/debdroid*.sh
+        else
+            warn "The backup of v$saved is missing some scripts." \
+                "Restoring over the current ones instead of replacing them." \
+                "A script added since v$saved will be left behind."
+        fi
+
         step "Restoring the scripts"
-        $BUSYBOX cp -a "$DEBDROID_BACKUP/$saved"/scripts/. "$DEBDROID_SDHOME"/
+        $BUSYBOX cp -a "$restore"/scripts/. "$DEBDROID_SDHOME"/
     fi
 
     section "Rolled back to v$saved"
+
+    # NOTE: "debdroid.conf" is neither backed up nor restored. It is not part of
+    #       a version: restoring an older copy would undo settings made since
+    #       the update, which is the behaviour this release set out to remove.
+    step "Your configuration was left as it is"
+
+    # The binaries are copied over rather than cleared, as busybox is being run
+    # from that directory right now. An unused newer binary may remain.
 }
 
 # Saves the current installation so an update can be undone
@@ -195,6 +250,11 @@ backup_installation()
     for script in "$DEBDROID_SDHOME"/*.sh "$DEBDROID_SDHOME"/environment; do
         [ -f "$script" ] && $BUSYBOX cp -a "$script" "$target"/scripts/
     done
+
+    # Records which backup to roll back to, so it never has to be guessed from
+    # a sorted directory listing
+    # NOTE: Written last, so a backup interrupted halfway is not pointed at.
+    echo "$DEBDROID_VER" > "$DEBDROID_BACKUP"/previous
 }
 
 # Installs a release bundle that is already on the device
