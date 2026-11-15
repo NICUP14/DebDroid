@@ -11,7 +11,8 @@ su
 sh /sdcard/debdroid/tests/device.sh
 ```
 
-Include its output if you report a problem.
+Include its output if you report a problem. In the app, Manage → **Issue
+report** runs it and shows the same output.
 
 ## Look up what you're seeing
 
@@ -168,7 +169,9 @@ su
 sh /sdcard/debdroid/debdroid.sh swap create 2G
 ```
 
-Then set `CONFIG_ENV_SWAP=yes` in `/sdcard/debdroid/debdroid_mgr.sh`.
+Then turn it on: in the app, Settings → **Use a swapfile**. From a terminal,
+add `CONFIG_ENV_SWAP=yes` to `/sdcard/debdroid/debdroid.conf`, creating the
+file if it does not exist.
 
 The desktop helper also turns off the XFCE4 power manager, which is the usual
 culprit: it expects a laptop battery and can use a surprising amount of memory

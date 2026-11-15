@@ -21,6 +21,9 @@ su
 sh /sdcard/debdroid/debdroid.sh command user
 ```
 
+In the app: Manage → **Users** for the user, then turn on **SSH server** on
+Home while Debian runs. It opens in the terminal, which shows what it prints.
+
 ## Set it up
 
 ```bash

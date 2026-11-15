@@ -15,6 +15,11 @@ sh /sdcard/debdroid/debdroid.sh
 You are now root inside Debian. The prompt changes, and commands like `uname -a`
 report Linux rather than Android.
 
+**In the app:** press **Start session**. The **Terminal** tab is a shell inside
+Debian, and Debian keeps running when you leave it. Where this page opens a
+session, use that tab instead. Each step below that the app does for you says
+so.
+
 To leave:
 
 ```bash
@@ -52,6 +57,8 @@ su
 sh /sdcard/debdroid/debdroid.sh command user
 ```
 
+In the app: Manage → **Users**.
+
 It asks for a name and a password, then puts the user in the groups it needs.
 That includes the one Android requires before any program can use the network,
 which is easy to miss when doing it by hand.
@@ -78,6 +85,8 @@ sh /sdcard/debdroid/debdroid.sh run apt install 'package one' 'package two'
 ```
 
 ## Check everything is healthy
+
+In the app: Manage → **Issue report** runs the same check.
 
 ```bash
 su

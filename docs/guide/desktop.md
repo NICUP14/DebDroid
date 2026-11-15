@@ -26,7 +26,9 @@ su
 sh /sdcard/debdroid/debdroid.sh swap create 2G
 ```
 
-Then set `CONFIG_ENV_SWAP=yes` in `/sdcard/debdroid/debdroid_mgr.sh`.
+In the app, Manage → **Swapfile** creates it. Then turn it on: in the app, Settings → **Use a swapfile**. From a terminal,
+add `CONFIG_ENV_SWAP=yes` to `/sdcard/debdroid/debdroid.conf`, creating the
+file if it does not exist.
 
 **3. Make sure you have space.** A desktop with a browser wants 6 GB or more:
 
@@ -42,6 +44,9 @@ su
 sh /sdcard/debdroid/debdroid.sh start
 sh /sdcard/debdroid/debdroid.sh attach sh /sdcard/debdroid/command/vncserver.sh
 ```
+
+In the app: turn on **VNC desktop** on Home while Debian runs. It opens in the
+terminal, which asks for the password the first time.
 
 The first run installs the desktop, which takes a while and downloads a lot.
 It asks you to set a VNC password. Eight characters is the maximum, which is a
@@ -60,12 +65,12 @@ the address it printed using the password you set.
 
 ## Change the resolution
 
-Match your screen for the best result:
+Match your screen for the best result. Add this line to
+`/sdcard/debdroid/environment` (in the app: Manage → **Environment
+variables**), then start the desktop again:
 
-```bash
-su
-DEBDROID_VNC_GEOMETRY=1920x1080 sh /sdcard/debdroid/debdroid.sh \
-    attach sh /sdcard/debdroid/command/vncserver.sh
+```sh
+export DEBDROID_VNC_GEOMETRY=1920x1080
 ```
 
 ## If it's slow
@@ -73,7 +78,7 @@ DEBDROID_VNC_GEOMETRY=1920x1080 sh /sdcard/debdroid/debdroid.sh \
 Normal for a phone. These help:
 
 - A lower resolution.
-- A lower colour depth: `DEBDROID_VNC_DEPTH=16`.
+- A lower colour depth: `export DEBDROID_VNC_DEPTH=16` in the same file.
 - Turn off XFCE4's compositing: Settings → Window Manager Tweaks →
   Compositor.
 - Use a wired network via a USB adapter, if the device supports one.

@@ -15,7 +15,8 @@ df -h /
 
 ## Make it bigger
 
-Exit Debian first. The resizer refuses to run while it is in use.
+Exit Debian first. The resizer refuses to run while it is in use. In the app:
+stop Debian on Home, then Manage → **Image size**.
 
 ```bash
 su

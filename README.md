@@ -37,6 +37,22 @@ sh /sdcard/debdroid/debdroid.sh attach
 
 Close the terminal and it keeps running. It can also start again after a reboot.
 
+Rather tap than type? [The app](docs/guide/app.md) installs DebDroid and does
+all of the above from one screen, with a terminal built in.
+
+<table>
+  <tr>
+    <td><img src="res/app-home.png" alt="the app's home screen"></td>
+    <td><img src="res/app-terminal.png" alt="the app's terminal"></td>
+    <td><img src="res/app-manage.png" alt="the app's manage screen"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Home</sub></td>
+    <td align="center"><sub>Terminal</sub></td>
+    <td align="center"><sub>Manage</sub></td>
+  </tr>
+</table>
+
 ## What you can do with it
 
 |  |  |
@@ -86,10 +102,10 @@ are the ones most likely to be sitting in a drawer.
 | | |
 | --- | --- |
 | **1.** | [Will it work on my phone?](docs/guide/requirements.md) |
-| **2.** | [Install it](docs/guide/install.md), about ten minutes |
+| **2.** | [Install it](docs/guide/install.md), about ten minutes, or a few taps with [the app](docs/guide/app.md) |
 | **3.** | [First steps](docs/guide/first-steps.md) |
 
-You need a rooted `arm64-v8a` device on Android 5.0 or later and 1 GB of free
+You need a rooted `arm64-v8a` device on Android 5.0 or later and 1.5 GB of free
 space. 5 GB is comfortable.
 
 ## How it works
@@ -124,7 +140,7 @@ bundled binary is written down in [THIRD_PARTY.md](THIRD_PARTY.md).
 ```sh
 make check    # syntax and shellcheck
 make test     # the host test suite, no device needed
-make all      # both, plus the provenance check
+make all      # every check, including the app (needs a JDK 17, the Android SDK and gradle)
 ```
 
 Start with [AGENTS.md](AGENTS.md). It has the conventions, which file to change

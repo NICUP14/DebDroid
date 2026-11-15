@@ -1,12 +1,45 @@
 # TODO List
 
 Work is tracked against the version it is targeted at. The current version is
-the one in `debdroid/debdroid_env.sh`, which is the single source of truth;
+the one in `debdroid/debdroid_lib.sh`, which is the single source of truth;
 CI checks that this file agrees with it.
 
 **Current version: v1.2.6**
 
 See [CHANGELOG.md](CHANGELOG.md) for what each release actually shipped.
+
+## The app
+
+- [X] `debdroid.sh probe`, the machine-readable state, with tests.
+- [X] `app/` plumbing: gradle build, `make app`, CI job, version derived from
+      `DEBDROID_VER`, payload list shared with the module.
+- [X] Home, the boundary through su, the install detection table.
+- [X] The terminal: pty, emulator, keys, preferences.
+- [X] Install, detected and installing, with the pinned checksum.
+- [X] Manage, Settings, the command manager and editor.
+- [X] The notification, the Quick Settings tiles, the launcher shortcut.
+- [X] Uninstall with the image kept by default; rollback; log; issue report.
+- [X] Decide where the release signing key lives, then add the four secrets
+      so the release workflow publishes `DebDroid.apk`.
+- [X] One downloader: the app runs the installer's (`debdroid_image.sh`)
+      instead of its own, and accepts the offline installer zip as the
+      offline route, warning on a checksum mismatch rather than refusing.
+- [X] Refuse to install while Debian is running.
+- [ ] Rebuild busybox with modern TLS so `wget` alone can fetch from the
+      releases host. Until then a device without toolbox `curl` cannot
+      download the image, and needs the offline installer.
+- [ ] Run the app on android 5 or 6, and on android 10 or later.
+- [ ] `self-update --offline` in the app, once a release bundle exists.
+- [ ] F-Droid metadata, and a reproducible build of the bundled binaries.
+- [ ] Measure whether the apk rebuilds byte-identically before claiming it.
+
+## Before the next release
+
+- [X] Rebuild the shipped image from debootstrap (`rootfs/build-image.sh`), so
+      its permissions are Debian's own, and update `rootfs/manifest`. The
+      release workflow's permission check is now an error.
+- [ ] Decide whether images already installed get a repair. For now the fix
+      reaches a device only through a fresh image.
 
 ## For DebDroid v1.2.6 (released 2026-11-14)
 
@@ -63,7 +96,7 @@ published release, listed here rather than left in someone's head.
       10 or later, where `/apex` exists and the chroot does not mount it.
       Neither is a release blocker on its own: armv7 ships no binaries yet, and
       `arch_is_built` refuses it rather than failing later.
-- [ ] Merge `testing` into `main`, then repoint the README CI badge, which is
+- [X] Merge `testing` into `main`, then repoint the README CI badge, which is
       pinned to `?branch=testing` because the workflow only exists there.
       The release workflow now refuses any tag that is not reachable from
       `main`, so this is enforced rather than remembered.
@@ -307,14 +340,13 @@ Distribution is the theme: get the repository down to scripts and recipes.
       every image refresh: `.git` is 328 MB as of the 12.15 refresh, against
       170 MB before it, and the working tree carries another 1.1 GB in `img/`.
 - [ ] A one-line bootstrap installer, for people who would rather paste one
-      command than use a file manager. A third option alongside the module and
-      the zip, not a replacement for either.
+      command than use a file manager. Another option alongside the app, the
+      module and the zip, not a replacement for any of them.
 
 ## Planned for future versions of DebDroid
 
-- [ ] A thin terminal APK, so DebDroid has an installable icon. The groundwork
-      is background mode, which is done: the app would attach to a running
-      session.
+- [X] A thin terminal APK, so DebDroid has an installable icon. Done as the
+      app in `app/`, which attaches to the background session.
 - [ ] Benchmarks against a Pi Zero 2 and a Pi 3, published. The comparison
       table in the README makes claims that measurements would settle.
 - [ ] More recipes: Nextcloud, Home Assistant, a media server.

@@ -4,7 +4,7 @@
 
 ## What you are trusting
 
-Running DebDroid means trusting four things:
+Running DebDroid means trusting four things, five with the app:
 
 1. **The device's kernel**, which on a device old enough to be spare is almost
    certainly unpatched.
@@ -14,6 +14,8 @@ Running DebDroid means trusting four things:
    [integrity](integrity.md) for how downloads are verified.
 4. **Whatever you install inside debian**, which also runs as root unless you
    create a normal user.
+5. **The DebDroid app**, if you use it. Your root manager grants it root, and
+   it runs these same scripts.
 
 This page is about the first one, which is the part you cannot fix.
 

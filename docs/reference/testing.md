@@ -13,7 +13,8 @@ Runs on any Linux machine, in a couple of seconds.
 ```sh
 make check    # sh -n, bash --posix -n, dash -n, shellcheck
 make test     # the unit and integration suite
-make all      # both, plus the provenance check
+make all      # also provenance, docs, versions and the app
+make app      # the app: gradle build, unit tests, lint
 ```
 
 ### How it avoids touching the product
@@ -21,8 +22,9 @@ make all      # both, plus the provenance check
 `tests/run.sh` copies the scripts into a temporary directory and rewrites the
 paths baked into them, so the shipped scripts are never modified. It also
 installs a stub `busybox` that forwards applets to the host's tools and fakes
-the android-only ones (`getprop`, `id`), with `FAKE_ABI`, `FAKE_ABILIST` and
-`FAKE_UID` letting a test change what they report.
+`id`, and puts a `getprop` shim on `PATH`, since `getprop` is not a busybox
+applet. `FAKE_ABI`, `FAKE_ABILIST` and `FAKE_UID` let a test change what they
+report.
 
 Functions are loaded out of the product scripts with
 `sed -n '/^name()/,/^}/p'` and `eval`, so the tests exercise the shipped code
@@ -38,6 +40,11 @@ rather than a copy of it.
 | `test_envfiles.sh` | the config files written into the image, including symlink escapes |
 | `test_background.sh` | the supervisor pid file, including a live pid in the wrong namespace |
 | `test_lifecycle.sh` | the uninstaller's path guards, the updater's verification |
+| `test_image.sh` | how the prebuilt image is located and verified |
+| `test_module.sh` | the module zip against how root managers install it |
+| `test_selfcontained.sh` | each script standing up without the frontend |
+| `test_update.sh` | what survives an update, and what must not |
+| `test_probe.sh` | the `debdroid.sh probe` contract the app relies on |
 
 Run one file with `sh tests/run.sh lib`.
 
@@ -86,7 +93,8 @@ android's real `/dev`, which is the exact bug the suite is checking for.
 
 ## CI
 
-Every push runs tier 1, the provenance check, and two guards:
+Every push runs tier 1, the provenance check, the documentation and version
+checks, the app's build with its unit tests and lint, and two guards:
 
 - **No namespace but `--mount`.** Android devices support no other, and the
   mount-only design reads like a limitation to anyone changing the code cold.

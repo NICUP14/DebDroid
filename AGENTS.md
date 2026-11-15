@@ -57,7 +57,8 @@ tools because the Android toolbox on old devices lacks nearly everything.
 | `bin/` `lib/` | Bundled binaries and the preloaded libraries |
 | `command/` | Command scripts run inside (or for) the environment |
 | `boot/` | Start-at-boot hook |
-| `module/` | Magisk / KernelSU / APatch module |
+| `module/` | Magisk / KernelSU / APatch module, and `payload.list` |
+| `app/` | The android app: installer and front end (Kotlin, gradle) |
 | `tests/` | All three test tiers |
 | `tools/` | Maintenance and verification scripts |
 | `package/` | Build recipes for the bundled binaries |
@@ -87,11 +88,14 @@ On device, two locations: `/sdcard/debdroid` (scripts, image) and
 | Install or update flow | `install.sh`, `debdroid/debdroid_update.sh`, `debdroid/debdroid_image.sh` |
 | Uninstall | `debdroid/debdroid_uninstall.sh` |
 | A bundled binary | `provenance/manifest`, `THIRD_PARTY.md`, `package/build_all.sh`, `docs/reference/building.md` |
-| The shipped image | `tools/refresh-image.sh`, `rootfs/manifest` |
+| The shipped image | `rootfs/build-image.sh` (from scratch), `tools/refresh-image.sh` (an upgrade in place), `rootfs/manifest` |
 | Release artifacts | `module/build.sh`, `.github/workflows/release.yml`, `docs/reference/releasing.md` |
 | The module or how it installs | `module/customize.sh`, `module/build.sh`, plus `tests/test_module.sh` |
 | Architecture support | `debdroid_lib.sh` → `check_arch` / `arch_is_built`; `package/build_all.sh` |
 | Anything versioned | See §7, the version lives in five files |
+| What a program can read about the device | `debdroid_probe.sh`, `docs/reference/probe.md`, `tests/test_probe.sh` |
+| What the module and the app both carry | `module/payload.list` (read by `module/build.sh` and `app/build.gradle.kts`) |
+| The app | `app/`, and its own [README](app/README.md) |
 
 ### Adding a command
 
@@ -152,13 +156,27 @@ does source is `debdroid.conf`, beside itself, and only if it exists.
 
 **The `CONFIG_*` flags in `debdroid_mgr.sh` are defaults, not configuration.**
 The user's values go in `/sdcard/debdroid/debdroid.conf`, which overrides them.
-That file is **not shipped**, and `install.sh` has no code path that writes it:
-that is deliberate, and it is the whole fix. The flags used to be edited in the
+That file is **not shipped**, and `install.sh` never overwrites it: it only
+creates it once, to carry flags out of an older manager, and only when one
+differed. The app's Settings writes only the flags the user changes. That is
+deliberate, and it is the whole fix. The flags used to be edited in the
 manager itself, which an update replaces, so every update silently discarded
 them. Do not add `debdroid.conf` to the payload or to the preserve list in
 `install.sh`, because a file that is never copied cannot be overwritten by
 someone forgetting to list it. `tests/test_envfiles.sh` asserts the installer
 leaves it alone; that test is the guarantee.
+
+**The app reads state only through the probe.** `debdroid.sh probe` prints
+`key=value` lines whose keys never change meaning (docs/reference/probe.md).
+`status` is prose and free to change. A new fact the app needs is a new probe
+key, added with its test, never a parse of `status`. `environment_state` in
+`debdroid_lib.sh` is the one reading both use, so they cannot disagree.
+
+**A session command runs through `session_command`.** debian's `su -c` calls
+`setsid()`, so the command had no controlling terminal: bash printed "no job
+control in this shell" and Ctrl-C never reached a running program, in the CLI
+and the app alike. The wrapper runs it under `setsid -c -w` when stdin is a
+terminal, and unchanged when it is not, as `setsid -c` fails without one.
 
 **The supervisor's blocking loop is deliberate:**
 
@@ -201,7 +219,7 @@ front-end wrapper. Those two binaries cannot be dropped.
 **`for x in a b 2>/dev/null` is a syntax error.** Redirection is not allowed in
 a `for` list. An unmatched glob stays literal; filter with `[ -f "$x" ]`.
 
-**Do not name a variable or manifest key `done`.** `$(probe done)` parses as a
+**Do not name a variable or manifest key `done`.** `$(inside_value done)` in `tests/device.sh` parses as a
 shell keyword inside a command substitution.
 
 **`getprop` is not a busybox applet.** It belongs to the android toolbox, and
@@ -316,8 +334,12 @@ make test         # host suite, no root, no device; builds the module zip
 make provenance   # binaries and the image against their manifests
 make docs         # links, redirect stubs, guide vocabulary
 make version      # every file naming a version agrees
+make app          # the app: gradle build, unit tests, lint
 make all          # all of the above
 ```
+
+`make app` needs a JDK 17, the android sdk and gradle; no wrapper is
+committed. See [app/README.md](app/README.md).
 
 ### How the host harness works
 
@@ -365,7 +387,8 @@ Android's real `/dev`, the exact bug the suite checks for.
 ### What CI enforces
 
 Namespace flags, ext4 creation, provenance, license texts, no committed APKs,
-doc links, guide vocabulary, version agreement. Expect it to catch you.
+doc links, guide vocabulary, version agreement, and the app's build, unit tests
+and lint. Expect it to catch you.
 
 **shellcheck runs locally and in CI, but not at the same version.** The local
 one is whatever the machine has; CI uses the one preinstalled on the pinned
@@ -379,6 +402,10 @@ say why: the exclusion list in the `Makefile` carries a reason per code.
 ---
 
 ## 7. Versions live in five files
+
+The app adds no sixth copy: `app/build.gradle.kts` derives `versionName` and
+`versionCode` from `DEBDROID_VER` (1.2.6 becomes 10206, as in `module.prop`),
+and `make version` fails if a literal ever appears there instead.
 
 `DEBDROID_VER` in `debdroid/debdroid_lib.sh` is the single source of truth. It
 is **not** in `debdroid_env.sh`: the installer preserves that file, so a version
@@ -407,9 +434,9 @@ See `docs/reference/releasing.md`.
   (`safe_remove`) and `module/customize.sh` (`${MODPATH:?}`) guard this because
   everything here runs as root.
 - Commit an APK, or add a binary without a `provenance/manifest` entry.
-- Make installation harder. It is one tap or three terminal lines, and the
-  audience is mostly novices. Users never run `debootstrap`, never read a
-  manifest, never build a filesystem.
+- Make installation harder. It is a few taps in the app, one tap in a root
+  app, or three terminal lines, and the audience is mostly novices. Users
+  never run `debootstrap`, never read a manifest, never build a filesystem.
 - Document a workaround in a guide when you could remove the need for it. The
   `inet` group is the example: `command/user.sh` handles it, so the guides no
   longer explain it.
@@ -421,18 +448,25 @@ See `docs/reference/releasing.md`.
 ## 9. Current state
 
 **v1.2.6 is published**, from `main`, which `testing` now matches. It is the
-project's first release. arm64 binaries only; the other architectures have
+project's first release, republished on 2026-11-15 with the app and an image
+rebuilt from debootstrap. arm64 binaries only; the other architectures have
 plumbing and build recipes but no artifacts. The `rootfs/manifest` *tarball*
 entries are still commented placeholders that fail closed, as only the image is
 published so far.
 
-A tag runs `.github/workflows/release.yml`, which publishes four assets: the
-two module zips, `debian.img.gz`, and `SHA256SUMS`. **The tagged commit has to
+A tag runs `.github/workflows/release.yml`, which publishes five assets: the
+two module zips, `debian.img.gz`, `DebDroid.apk` and `SHA256SUMS`. **The tagged commit has to
 be reachable from `main`** and **the tag has to match `DEBDROID_VER`**, or the
 workflow refuses and publishes nothing, so a tag on a working branch does not
 release. Nothing in CI exercises that workflow, as it only fires on a `v*` tag,
 so changes to it are verified by running their shell by hand. What earns a
 release at all is in `docs/reference/releasing.md`, and open work is in
 [TODO.md](TODO.md).
+
+The app lives in `app/` and is built by `make app` and CI. The release
+workflow signs `DebDroid.apk` with the project's key, read from four
+repository secrets, and publishes it with the rest. Without them it publishes
+no apk rather than one signed with a throwaway key, which could never be
+updated.
 
 Open work is in [TODO.md](TODO.md), ordered by target version.

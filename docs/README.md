@@ -8,23 +8,26 @@ anyone auditing what runs on their device.
 
 Three steps. If one of them goes wrong, the linked page covers it in full.
 
-**1. Check your phone can run it.** In a terminal app:
+**1. Check your phone can run it.** Using the app? Skip this: it checks for
+you. Otherwise, in a terminal app:
 
 ```bash
 su                              # the prompt should change to #
 getprop ro.product.cpu.abi      # should say arm64-v8a
 ```
 
-Both have to work. You also need Android 5.0 or later and 1 GB free. If the
+Both have to work. You also need Android 5.0 or later and 1.5 GB free. If the
 first command fails, the device is not rooted and DebDroid cannot run on it.
 More detail: [will it work on my phone?](guide/requirements.md)
 
-**2. Install it.** If you rooted with Magisk, KernelSU or APatch, download
-`DebDroid-module.zip` from the
-[releases page](https://github.com/NICUP14/DebDroid/releases) and flash it in
-your root app. No terminal needed. It downloads Debian while installing, so the
-phone needs Wi-Fi. Other ways, including one that needs no network, and what to
-do when it fails: [install DebDroid](guide/install.md)
+**2. Install it.** The easiest way is the app: download `DebDroid.apk` from the
+[releases page](https://github.com/NICUP14/DebDroid/releases), open it and
+press **Install**. No terminal needed, and it works however the phone was
+rooted. See [use the app](guide/app.md). If you rooted with Magisk, KernelSU or
+APatch, flashing `DebDroid-module.zip` in your root app works too. Both
+download Debian while installing, so the phone needs Wi-Fi. Other ways,
+including one that needs no network, and what to do when it fails:
+[install DebDroid](guide/install.md)
 
 **3. Open a session:**
 
@@ -42,6 +45,8 @@ before running much else.
 
 Most people come for one of these.
 
+- **Everything from a screen, no commands.** [Use the app](guide/app.md)
+  covers starting Debian, its terminal, and what Manage and Settings do.
 - **A server that stays up.** Debian stops when you close the terminal unless
   you tell it not to. [Keep it running](guide/keep-it-running.md) is the page to
   read before setting up anything that needs to stay running.
@@ -107,17 +112,17 @@ conventions, which file to change for a given task, and the gotchas that
 produce code which looks correct and breaks on real hardware.
 
 ```sh
-make all    # syntax, shellcheck, tests, provenance, docs, versions
+make all    # syntax, shellcheck, tests, provenance, docs, versions, the app
 ```
 
 ## Resources
 
 - **[Gallery](gallery.md)**: what it actually looks like running.
 - **[Icon](../res/icon/README.md)**: the launcher icon, its colours, and the
-  vector sources, for anyone packaging DebDroid into an app.
+  vector sources the app uses.
 - **[Third-party components](../THIRD_PARTY.md)**: where every bundled binary
   came from, with checksums.
 - **[Changelog](../CHANGELOG.md)**: what each release shipped.
 - **[Roadmap](../TODO.md)**: open work, by target version.
-- **[Releases](https://github.com/NICUP14/DebDroid/releases)**: the module zips
-  and the prebuilt image.
+- **[Releases](https://github.com/NICUP14/DebDroid/releases)**: the app, the
+  module zips and the prebuilt image.

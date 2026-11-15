@@ -2,14 +2,33 @@
 
 # Install DebDroid
 
-There are two ways. **The first is much easier.** Use it unless you have a
-reason not to.
+There are three ways. **The first two are much easier.** Use one of them
+unless you have a reason not to.
 
 Check [will it work on my phone?](requirements.md) first.
 
 ## What you'll end up with
 
 DebDroid installed, and a Debian session you can open.
+
+---
+
+## The easiest way: the app
+
+Works on any rooted phone, and needs no terminal.
+
+1. Download `DebDroid.apk` from the
+   [releases page](https://github.com/NICUP14/DebDroid/releases) and install
+   it.
+2. Open **DebDroid** and allow it in your root app.
+3. Press **Install**.
+
+It downloads Debian (about 130 MB) while installing, so the phone needs Wi-Fi.
+Without Wi-Fi, choose **Use the offline installer instead** and pick
+`DebDroid-module-offline.zip`, copied over from a computer.
+
+Everything the app does is in [use the app](app.md). Skip to
+[check it worked](#check-it-worked), or just press **Start session**.
 
 ---
 
@@ -27,7 +46,7 @@ and no terminal at all.
 That's it. It installs everything and sets Debian to start automatically after
 each reboot.
 
-The download is small, and Debian itself (about 150 MB) is fetched while the
+The download is small, and Debian itself (about 130 MB) is fetched while the
 module installs. Your phone needs Wi-Fi for that step.
 
 > [!TIP]
@@ -115,7 +134,8 @@ You are inside Debian. Type `exit` to leave.
 
 ## Updating later
 
-Re-run the installer, flash a newer module, or use `debdroid.sh self-update`.
+Install the newer `DebDroid.apk` and open it, flash a newer module, or re-run
+the installer.
 Your Debian install and your settings are kept either way. See
 [updating](updating.md).
 

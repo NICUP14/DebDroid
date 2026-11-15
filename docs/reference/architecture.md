@@ -47,10 +47,14 @@ debdroid_mgr.sh        Manager: namespaces, locking, mounts, teardown
 debdroid_resize.sh     Image resizer
 debdroid_update.sh     Runtime self-update
 debdroid_uninstall.sh  Uninstaller
+debdroid_image.sh      Downloads and verifies the debian image
+debdroid_swap.sh       The swapfile
+debdroid_probe.sh      Machine-readable state, for "debdroid.sh probe"
 debdroid_ui.sh         Output helpers shared by all of them
 debdroid_lib.sh        Shared functions shared by all of them
 debdroid_env.sh        Paths and variables
 environment            Variables exported inside the session
+debdroid.conf          The user's flags, if any (never shipped)
 command/               Command scripts
 tests/                 The device test suite
 boot/                  The start-at-boot hook
@@ -81,6 +85,8 @@ bin/ lib/     The bundled binaries and libraries
 command/      Command scripts
 boot/         The start-at-boot hook
 module/       The magisk, kernelsu and apatch module
+app/          The android app: installer and front end
+rootfs/       Building the debian image, and its manifest
 tests/        All three test tiers
 tools/        Maintenance scripts, such as the provenance verifier
 package/      Build recipes for the bundled binaries

@@ -9,6 +9,10 @@ Two different things can be updated, and they are easy to confuse:
 | Debian and its packages | `debdroid.sh command update` |
 | DebDroid itself | `debdroid.sh self-update` |
 
+**In the app:** Manage → **Update packages** updates Debian. To update
+DebDroid itself, install the newer `DebDroid.apk` over the old one, open it and
+press **Update**. Your Debian install and your settings are kept.
+
 ## Update Debian
 
 The usual `apt` update, run inside Debian:
@@ -28,15 +32,14 @@ sh /sdcard/debdroid/debdroid.sh self-update --check
 ```
 
 That reports your version and where releases are published. To install a
-release you have downloaded:
+newer version, install the newer `DebDroid.apk` and open it, or flash the newer
+`DebDroid-module.zip` in your root app.
 
-```bash
-su
-sh /sdcard/debdroid/debdroid.sh self-update --offline /sdcard/Download/DebDroid-1.2.7.tar.gz
-```
+Your Debian install and your settings are kept.
 
-Your Debian install and your settings are kept. The previous version is saved
-first, so you can undo it:
+When `self-update` installs a release, it saves the previous version first,
+so you can undo it. Installing the app or the module saves no copy to go back
+to.
 
 ```bash
 su
@@ -56,9 +59,10 @@ cd /sdcard/Download/DebDroid-main
 sh install.sh
 ```
 
-It keeps your Debian install, and keeps `environment` and `debdroid_env.sh` if
-you have edited them. The new versions are saved alongside as `.new` so you can
-compare. Your settings in `debdroid.conf` are kept too, and nothing is written
+It keeps your Debian install. It keeps `environment` and `debdroid_env.sh` if
+you changed a setting in them, and saves the new versions beside them as `.new`
+so you can compare. If you never changed one, it is replaced with the new
+version. Your settings in `debdroid.conf` are kept too, and nothing is written
 beside them, because the update does not ship a copy of that file.
 
 ## Why downloads are checked

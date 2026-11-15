@@ -2,9 +2,33 @@
 
 # Gallery
 
-Real Debian programs on a phone, unmodified from the Debian archive. The
-desktop shots are XFCE4 over VNC, which [run a desktop](guide/desktop.md) sets
-up.
+Real Debian programs on a phone, unmodified from the Debian archive. The app
+shots are from a Galaxy Tab S2 on Android 7. The desktop shots are XFCE4 over
+VNC, which [run a desktop](guide/desktop.md) sets up.
+
+## In the app
+
+Home, with Debian running, a session's processes and the switches for the SSH
+server and the VNC desktop.
+
+![the app's home screen with Debian running](../res/app-home.png)
+
+Starting Debian, with the same output the terminal commands print.
+
+![the app starting Debian](../res/app-start.png)
+
+The built-in terminal, a shell inside Debian.
+
+![the app's terminal running neofetch](../res/app-terminal.png)
+
+Manage and Settings: storage, swap, users, updates and start at boot, without
+a command.
+
+![the app's manage screen](../res/app-manage.png)
+
+![the app's settings screen](../res/app-settings.png)
+
+[Use the app](guide/app.md) covers all of it.
 
 ## In a terminal
 

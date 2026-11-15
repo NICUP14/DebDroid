@@ -6,7 +6,8 @@ End-to-end projects, each a concrete reason to keep an old phone running.
 
 All of them assume you have read [keep it running](../keep-it-running.md), since
 every one of these is a server and would otherwise stop when you close the
-terminal.
+terminal. In the app, **Start session** already keeps it running, and the
+**Terminal** tab replaces the `start` and `attach` lines.
 
 ## Network
 

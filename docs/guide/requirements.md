@@ -2,7 +2,8 @@
 
 # Will It Work on My Phone?
 
-Four things to check. All four have to be true.
+Four things to check. All four have to be true. Using the app? It checks
+these for you, and says plainly if the phone cannot run DebDroid.
 
 ## 1. Is it rooted?
 
@@ -46,13 +47,16 @@ Android 14 too.
 
 ## 4. Is there enough free space?
 
-1 GB is the minimum. 5 GB is comfortable. A desktop with a browser wants more.
+1.5 GB is the minimum. 5 GB is comfortable. A desktop with a browser wants more.
 
 ```bash
 df -h /data
 ```
 
 ## Apps you'll want
+
+With the DebDroid app you need none of these: it has its own terminal, with
+Ctrl, Tab and the arrow keys. For the other ways to install:
 
 | App | Why | Install from |
 | --- | --- | --- |

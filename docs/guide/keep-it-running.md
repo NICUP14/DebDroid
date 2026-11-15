@@ -82,18 +82,17 @@ sh /sdcard/debdroid/debdroid.sh swap create 2G
 ```
 
 This takes a few minutes, writes a 2 GB file to internal storage, and only
-needs doing once. Then switch it on by editing
-`/sdcard/debdroid/debdroid_mgr.sh` and changing:
+needs doing once. In the app, Manage → **Swapfile** does the same.
 
-```sh
-CONFIG_ENV_SWAP=no
-```
-
-to:
+Then switch it on. In the app: Settings → **Use a swapfile**. From a terminal,
+add this line to `/sdcard/debdroid/debdroid.conf`, creating the file if it
+does not exist:
 
 ```sh
 CONFIG_ENV_SWAP=yes
 ```
+
+It applies the next time Debian starts.
 
 Check it with `sh /sdcard/debdroid/debdroid.sh swap status`.
 
@@ -110,7 +109,10 @@ rather than failing silently:
 
 ## Start it automatically after a reboot
 
-If your device is rooted with Magisk, KernelSU or APatch:
+In the app: Settings → **Start when the device boots**. Flashing the module
+turns this on for you.
+
+From a terminal, if your device is rooted with Magisk, KernelSU or APatch:
 
 ```bash
 su

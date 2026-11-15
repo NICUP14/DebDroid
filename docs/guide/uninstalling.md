@@ -2,6 +2,11 @@
 
 # Uninstall
 
+**In the app:** Manage → **Uninstall DebDroid**. It keeps your Debian install
+unless you turn on **Also delete the debian image**, and asks you to type
+`UNINSTALL` before it removes anything. Then uninstall the app itself as you
+would any other.
+
 ## Remove DebDroid, keep your Debian install
 
 ```bash

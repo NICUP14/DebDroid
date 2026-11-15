@@ -11,6 +11,22 @@ project did not keep a changelog before 1.2.6.
 
 ### Added
 
+- **The DebDroid app** (`app/`): an installer and a front end, so installing
+  needs no terminal and no third-party terminal app. It runs the same
+  `install.sh` as the module and the terminal route, and every action is a
+  `debdroid.sh` call. It carries its own terminal, an ongoing notification
+  with Attach and Stop, Quick Settings tiles, settings for the manager's
+  flags, a command script manager and editor, and uninstall with the image
+  kept unless asked. Android 5 and later. See `app/README.md`.
+- **The offline installer as the app's offline route.** "Use the offline
+  installer instead" takes the image from `DebDroid-module-offline.zip`. An
+  image that does not match the pinned checksum is shown with both checksums
+  and installed only on "Use it anyway"; downloads stay strict. See
+  `docs/reference/integrity.md`.
+- **`debdroid.sh probe`**, the device's state as `key=value` lines for
+  programs, with a documented contract (`docs/reference/probe.md`). It also
+  runs from an unpacked release with nothing installed, which is how the app
+  decides what to install.
 - **Background mode.** `debdroid.sh start` leaves Debian running after the
   terminal closes, `attach` opens a session in it, `stop` shuts it down and
   `status` reports what is running. Attaching skips the filesystem check, the
@@ -40,10 +56,32 @@ project did not keep a changelog before 1.2.6.
   in `package/`. Only `arm64` binaries ship so far, and the scripts now say so
   clearly instead of failing later.
 - **CI**, running the checks, the host tests, the provenance verification, the
-  documentation checks, and guards on the two design constraints.
+  documentation checks, the app's build, and guards on the two design
+  constraints.
 
 ### Fixed
 
+- **The debian image was writable by everyone.** Its base had been built with
+  umask 000: 880 directories and 1870 files, among them `/usr`, `/usr/bin`,
+  `/etc` and `/root`, could be written by any user in debian, `/etc/shadow`
+  could be read by any user, `/usr/bin/su` had lost its setuid bit, and
+  `/var/tmp` its sticky bit. Any user could replace a program root later ran.
+  The image is now built from debootstrap by `rootfs/build-image.sh`, so
+  every mode is the one Debian's own packages set, and the release refuses to
+  publish an image whose key paths have the wrong mode. It carries the same
+  packages as before, with the current security updates. An image already
+  installed keeps its permissions; reinstalling the image replaces it, and
+  your files in it with it.
+- **Sessions had no controlling terminal.** debian's `su -c` drops it, so
+  every session printed "no job control in this shell" and Ctrl-C could not
+  interrupt a running command. Interactive sessions now take their terminal
+  back; commands run through pipes behave as before.
+
+- **`debdroid_env.sh` and `environment` were never updated.** The installer
+  kept them on every update in case they had been edited, so a device that
+  never touched them kept an old default forever, a stale `DEBDROID_VER`
+  with it, and gained a new `.new` file each time. They are now kept only
+  when a setting in them differs from the shipped one.
 - **The `/dev` overlay never mounted.** `upperdir` was on a tmpfs while
   `workdir` was on the ext2 image, and the kernel requires both on the same
   filesystem, so it failed every time and silently used the bind fallback: an
@@ -61,8 +99,8 @@ project did not keep a changelog before 1.2.6.
   `apt install 'foo bar'` split into two arguments and `*` expanded against the
   host's current directory.
 - **The installer discarded user configuration**, overwriting `environment` and
-  `debdroid_env.sh` on every update. They are kept now, with the new versions
-  saved alongside as `.new`.
+  `debdroid_env.sh` on every update. They are kept now when you changed a
+  setting in them, with the new versions saved alongside as `.new`.
 - The root check calls busybox, as the android toolbox `id` on very old devices
   does not support `-u`.
 - `DEBDROID_VER` was still `1.2` while the last release was 1.2.5.
@@ -209,11 +247,14 @@ project did not keep a changelog before 1.2.6.
 
 ### Changed
 
+- The file list the module zip is staged from is now `module/payload.list`,
+  shared with the app's build.
+- Text files are checked out with LF endings everywhere
+  (`.gitattributes`), as a checkout on windows otherwise put CR into every
+  script.
 - **The shipped debian image is current again**, bookworm 12.15 rather than a
   build from 2025-09-02, so a new install no longer starts with a year of
-  updates to download. It is also smaller than before, 370 MiB of content
-  against 446 MiB, because the refresh purges and cleans more than a point
-  release adds, and the download is about 123 MB rather than 146 MB.
+  updates to download. The download is about 127 MB rather than 146 MB.
 - **The documentation is split into three tiers**: the README as the pitch,
   `docs/guide/` written for people who just want it working, and
   `docs/reference/` where the technical detail belongs. `Security.md` and
