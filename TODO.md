@@ -115,14 +115,31 @@ published release, listed here rather than left in someone's head.
       and the suite passes 73 on the result.
 
 - [ ] **A foreground session orphaned from its terminal holds the image lock,
-      and nothing can clear it.** Seen on android 7.0 on 2026-11-15: a
-      `debdroid.sh run` with no command, so an interactive login shell, outlived
-      the terminal that started it and sat on `/dev/pts/3` with nobody reading
-      it. The lock fd is inherited by every descendant, so the lock stayed held.
-      `status` reported "A foreground session is using the debian image" and
-      every attempt to start refused, correctly. Nothing had leaked: no mounts
-      in the real root, android's `/dev` untouched, and the image clean once it
-      was cleared.
+      and nothing can clear it.** Seen and then reproduced on android 7.0 on
+      2026-11-15, with a `debdroid.sh run` and no command, so an interactive
+      login shell. The lock fd is inherited by every descendant, so the lock
+      stays held. `status` reports "A foreground session is using the debian
+      image" and every attempt to start refuses, correctly. Nothing leaks: no
+      mounts in the real root, android's `/dev` untouched, and the image clean
+      once it is cleared.
+
+      **The trigger is narrow, and the ordinary case is fine.** Two tests:
+
+      - Closing the terminal **does** tear the session down, exactly as
+        `keep-it-running.md` promises. Killing the terminal client outright,
+        which is what android does to an app and cannot be caught, closed the
+        pty, the hangup reached the session, and it exited cleanly and released
+        the lock.
+      - The orphan needs the starting process to die **while the pty stays
+        open**. Killing the parent above the manager, with the terminal left
+        open, reparented the manager to init and left it running and holding
+        the lock, because its interactive child still had a live terminal.
+
+      So this is not the common path. It is reachable on a terminal app that
+      keeps the pty in a different process from the one android reclaims, which
+      some do on purpose so sessions survive the interface being killed. Worth
+      fixing because the state cannot be recovered from, not because it is
+      frequent.
 
       **There is no recovery command.** `debdroid.sh stop` only handles the
       background environment, because it works from the pid file and a
