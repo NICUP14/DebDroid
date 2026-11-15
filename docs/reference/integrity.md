@@ -21,6 +21,29 @@ verification. A mismatch aborts and leaves the existing installation
 **completely untouched**. A partly applied update is the one outcome worse than
 a failed one.
 
+### The one exception: a file you supply yourself
+
+The app can take the debian image from the offline installer,
+`DebDroid-module-offline.zip`, for a device with no usable network. That zip
+is the only file it accepts there, and it must be DebDroid's (its
+`module.prop` says `id=debdroid`).
+
+The image inside is checked against the checksum pinned in the app, which is
+the one in `rootfs/manifest`. When it matches, nothing is asked. When it does
+not, the app **does not refuse it**. It shows both checksums and both sizes,
+says the image may fail or behave differently, and moves it into place only
+if the user presses "Use it anyway". Discarding it leaves the installation
+untouched.
+
+This is deliberate. A file someone chose and copied to their own device may
+be their own resized image or a backup, which can never match the shipped
+checksum, and refusing it would sabotage exactly the person trying to
+recover. The rule is that they are never unaware of the mismatch, not that
+they are overruled.
+
+Nothing downloaded gets this treatment. A downloaded image that does not
+match is discarded and nothing is installed, as above.
+
 ## Where the checksums come from
 
 The trust anchor is this git repository, not the download server. Checksums
@@ -95,8 +118,7 @@ Closing it means signing DebDroid's own releases and pinning the public key in
 the installed tree. That is a small piece of work, not a distant one: `signify`
 and `minisign` are a few hundred lines of Ed25519 verification and cross-compile
 statically with the same NDK pipeline that already builds e2fsprogs. It is
-tracked for v1.3, and `tools/sign-release.sh` plus `verify_signature` in
-`debdroid_lib.sh` are the scaffolding, waiting on a published key.
+tracked for v1.3.
 
 ### Why Debian's own key does not cover the tarball
 
@@ -129,14 +151,14 @@ tarball and to DebDroid's own release files.
 tampering in transit and against a compromised mirror, but not against a
 compromised repository.
 
-## The one-liner installer
+## The app
 
-A `curl | sh` style installer runs before you can read what it does. That is
-inherent to the format, not something DebDroid can fix.
-
-Mitigations: the one-liner fetches, verifies against a fingerprint printed in
-the README, and only then executes. If you would rather inspect things first,
-the Magisk module and the manual zip are both verifiable before anything runs.
+`DebDroid.apk` is listed in the release's `SHA256SUMS` like every other asset,
+and is signed with the project's key. Android refuses to update an installed
+app with an apk signed by any other key, so a build from somewhere else cannot
+silently replace it. It carries the same scripts and binaries as the module,
+and the image checksum is built into it from `rootfs/manifest`, never taken
+from a download.
 
 ## Checking things yourself
 
@@ -146,13 +168,12 @@ Verify the bundled binaries against the manifest:
 sh tools/verify-provenance.sh
 ```
 
-Verify a release file you downloaded:
+Verify the release files you downloaded, in the folder holding them and the
+release's `SHA256SUMS`:
 
 ```sh
-sha256sum DebDroid-1.2.7.tar.gz
+sha256sum -c SHA256SUMS --ignore-missing
 ```
-
-and compare it against the published checksum.
 
 See also [signatures](signatures.md) for the apps DebDroid recommends, and
 [third-party components](../../THIRD_PARTY.md) for where each binary came from.

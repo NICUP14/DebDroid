@@ -1,0 +1,24 @@
+# Every text file is stored and checked out with LF line endings.
+#
+# The scripts run under android's /system/bin/sh, where a CRLF breaks every
+# line, and a checkout on windows with core.autocrlf=true writes CRLF unless
+# told otherwise. The app is built from this tree on windows too, so the
+# scripts it packages come from that checkout. app/build.gradle.kts also
+# refuses to package a script with a CR in it, as a second line of defence.
+* text=auto eol=lf
+
+# Binaries, which must never be touched by line-ending conversion
+*.png binary
+*.jpg binary
+*.ico binary
+*.so binary
+*.jar binary
+*.gz binary
+*.zip binary
+*.apk binary
+bin/busybox binary
+bin/e2fsck binary
+bin/resize2fs binary
+bin/ssl_helper binary
+bin/test_random binary
+img/** binary

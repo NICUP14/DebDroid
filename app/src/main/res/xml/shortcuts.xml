@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The launcher shortcut: long-press the icon to open a terminal straight away -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="terminal"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_terminal"
+        android:shortcutShortLabel="@string/shortcut_terminal"
+        android:shortcutLongLabel="@string/shortcut_terminal_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="io.github.nicup14.debdroid"
+            android:targetClass="io.github.nicup14.debdroid.ui.MainActivity">
+            <extra android:name="tab" android:value="terminal" />
+        </intent>
+    </shortcut>
+</shortcuts>

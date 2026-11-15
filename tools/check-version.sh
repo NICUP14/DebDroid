@@ -94,6 +94,23 @@ if [ -f module/update.json ]; then
     fi
 fi
 
+# The app derives its version instead of repeating it, so this checks that it
+# still does: a literal here would be a sixth copy, free to drift
+# NOTE: versionName and versionCode are computed in app/build.gradle.kts from
+#       debdroid_lib.sh, the same derivation as module.prop's versionCode.
+if [ -f app/build.gradle.kts ]; then
+    if grep -qE '^[[:space:]]*version(Name|Code)[[:space:]]*=[[:space:]]*("|[0-9])' app/build.gradle.kts; then
+        fail "app/build.gradle.kts" \
+            "sets versionName or versionCode to a literal" \
+            "derive both from debdroid/debdroid_lib.sh, as the file already does"
+    elif ! grep -q 'debdroid/debdroid_lib.sh' app/build.gradle.kts; then
+        fail "app/build.gradle.kts" \
+            "no longer reads the version from debdroid/debdroid_lib.sh"
+    else
+        echo "  ok  app/build.gradle.kts derives the version"
+    fi
+fi
+
 echo
 if [ "$failed" -eq 0 ]; then
     echo "version: everything agrees on $VERSION"

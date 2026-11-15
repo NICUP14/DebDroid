@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The palette, read out of res/icon/svg/debdroid-mark.svg -->
+    <color name="ground">#0B0B0D</color>
+    <color name="bars">#0F0F12</color>
+    <color name="primary">#E0103A</color>
+    <color name="text">#F4F4F6</color>
+    <color name="dim">#8E8E9A</color>
+</resources>

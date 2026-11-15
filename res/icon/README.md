@@ -12,7 +12,8 @@ Isometric container cube with a shell prompt on its face.
 | Icon background | `#0F0F12` |
 
 ## Android
-Copy everything in `android/res/` into `app/src/main/res/` (merging folders), then in `AndroidManifest.xml`:
+The app in `app/` uses `android/res/` where it is, as an extra resource
+directory, so nothing is copied. Its manifest sets:
 
 ```xml
 <application

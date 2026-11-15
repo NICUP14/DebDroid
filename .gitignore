@@ -7,3 +7,20 @@ out/
 # Local tooling for driving a test device. Machine-specific (paths, and the
 # launcher differs per host os), so it stays out of the tree.
 .mcp.json
+
+# Assistant state carried between machines by hand: session transcripts and
+# working notes. Confidential and never part of the project, but it lives in
+# the tree so that copying the directory to another host takes it along.
+.claude/
+
+# The app's gradle build, its caches and the machine's sdk path. Listed before
+# the first gradle run rather than after, so nothing generated is ever staged.
+app/build/
+app/.gradle/
+app/.cxx/
+app/.kotlin/
+.gradle/
+local.properties
+
+# Drafts that are not part of the docs: announcements, posts, notes
+docs/artifacts/

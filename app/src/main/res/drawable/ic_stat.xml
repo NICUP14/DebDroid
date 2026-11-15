@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The DebDroid mark, from res/icon/svg/debdroid-mark.svg -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="200" android:viewportHeight="200">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M100,24L166,62L100,100L34,62z" />
+    <path android:fillColor="#80FFFFFF" android:pathData="M34,62L100,100L100,176L34,138z" />
+    <path android:fillColor="#B3FFFFFF" android:pathData="M100,100L166,62L166,138L100,176z" />
+</vector>

@@ -132,3 +132,17 @@ busybox is being moved to the same footing.
 Where a build is reproducible, two people building from the same inputs should
 get identical checksums. Where it is not, the recipe and the version are at
 least recorded, which is the next best thing.
+
+## The app
+
+The app in `app/` is a separate gradle build. It carries the same payload as
+the module, staged from `module/payload.list` at build time, so nothing in
+this page needs repeating for it: rebuild a binary here, record it in the
+manifest, and the next app build picks it up.
+
+```sh
+make app
+```
+
+Details, including what the build generates and from where, are in
+[app/README.md](../../app/README.md).

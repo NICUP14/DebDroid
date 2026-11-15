@@ -1,0 +1,21 @@
+# payload.list: The files every DebDroid package carries
+#
+# One path per line, relative to the repository root. module/build.sh stages
+# these into the module zip and app/build.gradle.kts stages them into the app,
+# so one list serves both and neither can drift from the other.
+#
+# The installer is not listed. Each package adds it under its own name: the
+# module zip must not carry a top-level "install.sh" (see module/build.sh), and
+# the app has no such restriction. The image is not listed either, as only the
+# offline module bundles it.
+debdroid
+command
+bin
+lib
+tests
+boot
+rootfs/manifest
+LICENSE
+NOTICE
+THIRD_PARTY.md
+licenses

@@ -65,6 +65,16 @@ jobs:
       - name: Install tooling
         run: sudo apt-get update && sudo apt-get install -y zip e2fsprogs
 
+      # The app's build is part of "make all"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.4.1'
+
       # Everything that gates a release, before anything is published
       - name: Run the full check suite
         run: make all
@@ -124,6 +134,35 @@ jobs:
           sh module/build.sh out/DebDroid-module.zip
           sh module/build.sh --with-image out/DebDroid-module-offline.zip
 
+      # The app, published only when it can be signed with the release key
+      # NOTE: A key that is lost is an app nobody can update, so where it lives
+      #       is the maintainer's decision, not this workflow's. Until the four
+      #       secrets exist the release goes out without an apk, and says so,
+      #       rather than shipping one signed with a throwaway key that every
+      #       later release would then be unable to update.
+      - name: Build the signed app
+        id: app
+        env:
+          KEYSTORE_B64: ${{ secrets.DEBDROID_KEYSTORE_B64 }}
+          DEBDROID_KEYSTORE_PASSWORD: ${{ secrets.DEBDROID_KEYSTORE_PASSWORD }}
+          DEBDROID_KEY_ALIAS: ${{ secrets.DEBDROID_KEY_ALIAS }}
+          DEBDROID_KEY_PASSWORD: ${{ secrets.DEBDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+              echo "::warning::No release signing key is configured, so this release has no apk."
+              echo "apk=no" >> "$GITHUB_OUTPUT"
+              exit 0
+          fi
+
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP"/release.jks
+          export DEBDROID_KEYSTORE="$RUNNER_TEMP"/release.jks
+          (cd app && gradle --console=plain assembleRelease)
+          rm -f "$RUNNER_TEMP"/release.jks
+
+          mkdir -p out
+          cp app/build/outputs/apk/release/debdroid-app-release.apk out/DebDroid.apk
+          echo "apk=yes" >> "$GITHUB_OUTPUT"
+
       # The image ships as one file rather than the split parts, as a release
       # asset has no size limit worth worrying about
       - name: Assemble the debian image
@@ -175,8 +214,10 @@ jobs:
       - name: Checksum every asset
         run: |
           cd out
-          sha256sum DebDroid-module.zip DebDroid-module-offline.zip \
-              debian.img.gz > SHA256SUMS
+          assets="DebDroid-module.zip DebDroid-module-offline.zip debian.img.gz"
+          [ -f DebDroid.apk ] && assets="$assets DebDroid.apk"
+          # shellcheck disable=SC2086
+          sha256sum $assets > SHA256SUMS
           cat SHA256SUMS
 
       - name: Publish
@@ -184,13 +225,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag || github.ref_name }}
         run: |
+          assets="out/DebDroid-module.zip out/DebDroid-module-offline.zip out/debian.img.gz out/SHA256SUMS"
+          [ -f out/DebDroid.apk ] && assets="$assets out/DebDroid.apk"
+
+          # shellcheck disable=SC2086
           if gh release create "$TAG" \
                   --title "DebDroid $TAG" \
                   --notes-file out/RELEASE_NOTES.md \
-                  out/DebDroid-module.zip \
-                  out/DebDroid-module-offline.zip \
-                  out/debian.img.gz \
-                  out/SHA256SUMS; then
+                  $assets; then
               exit 0
           fi
 
@@ -200,11 +242,8 @@ jobs:
           #       them, so re-publishing used to upload corrected assets and
           #       leave the previous notes in place, describing a release that
           #       no longer matched what people were downloading.
-          gh release upload "$TAG" --clobber \
-              out/DebDroid-module.zip \
-              out/DebDroid-module-offline.zip \
-              out/debian.img.gz \
-              out/SHA256SUMS
+          # shellcheck disable=SC2086
+          gh release upload "$TAG" --clobber $assets
 
           gh release edit "$TAG" \
               --title "DebDroid $TAG" \

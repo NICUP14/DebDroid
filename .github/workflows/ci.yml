@@ -45,6 +45,31 @@ jobs:
       - name: Run the host test suite
         run: make test
 
+  # The app is built from the same tree: its payload is staged from
+  # module/payload.list and its image checksum from rootfs/manifest, so a
+  # change to either is caught here and not on a device
+  # NOTE: gradle is installed rather than run through a wrapper, as the
+  #       wrapper's jar is a binary with no provenance entry.
+  #       The runner image ships a JDK and the android sdk; AGP fetches the
+  #       platform, NDK and CMake versions the build pins when they are absent.
+  app:
+    name: App build and unit tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.4.1'
+
+      - name: Build the app and run its unit tests
+        run: make app
+
   provenance:
     name: Provenance and licensing
     runs-on: ubuntu-24.04

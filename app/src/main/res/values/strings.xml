@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_terminal">Terminal</string>
+    <string name="shortcut_terminal_long">Open a terminal</string>
+</resources>

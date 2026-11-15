@@ -4,16 +4,20 @@
 #
 #   make check    Syntax and shellcheck, no device needed
 #   make test     Host test suite, no root and no device needed
-#   make all      Both of the above
+#   make app      The app's gradle build and its unit tests
+#   make all      All of the above
 
 SCRIPTS = install.sh $(wildcard debdroid/*.sh) $(wildcard command/*.sh) \
           $(wildcard tests/*.sh) $(wildcard boot/*.sh) $(wildcard tools/*.sh) \
           $(wildcard package/*.sh) $(wildcard module/*.sh) bin/debinit
 
 .POSIX:
-.PHONY: all check syntax shellcheck functions provenance docs version test test-device help
+.PHONY: all check syntax shellcheck functions provenance docs version test test-device app help
 
-all: check version provenance docs test
+# The gradle used for the app, which commits no wrapper
+GRADLE = gradle
+
+all: check version provenance docs test app
 
 help:
 	@echo 'make check        Syntax check and shellcheck every script'
@@ -21,6 +25,7 @@ help:
 	@echo 'make docs         Check documentation links and guide vocabulary'
 	@echo 'make version      Check every file naming a version agrees'
 	@echo 'make test         Run the host test suite'
+	@echo 'make app          Build the app and run its unit tests'
 	@echo 'make all          All of the above'
 	@echo 'make test-device  Print how to run the device suite'
 
@@ -78,6 +83,13 @@ version:
 
 test:
 	@sh tests/run.sh
+
+# Kept out of "check", which stays shell only and fast, and run from "all"
+# NOTE: No gradle wrapper is committed. Its jar is a binary, and AGENTS.md
+#       forbids a binary without a provenance entry, so CI installs gradle
+#       itself and a contributor uses their own: "make app GRADLE=/path/gradle".
+app:
+	@cd app && $(GRADLE) --console=plain assembleDebug testDebugUnitTest lintDebug
 
 # The device suite has to run on the device, so this only prints the command
 test-device:

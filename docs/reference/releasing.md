@@ -95,16 +95,39 @@ cannot be forgotten.
    ```
 9. **The workflow publishes the release.** It extracts the version's own
    section from `CHANGELOG.md` as the release notes, so the notes are only as
-   good as that section, and it uploads the four assets below with their
+   good as that section, and it uploads the five assets below with their
    checksums.
+
+## The app
+
+A release also publishes `DebDroid.apk`, covered by `SHA256SUMS`, but only
+when the release key is configured. The workflow reads four repository
+secrets:
+
+| Secret | Holds |
+| --- | --- |
+| `DEBDROID_KEYSTORE_B64` | The keystore, base64-encoded |
+| `DEBDROID_KEYSTORE_PASSWORD` | Its password |
+| `DEBDROID_KEY_ALIAS` | The key's alias |
+| `DEBDROID_KEY_PASSWORD` | The key's password |
+
+Without them the release goes out without an apk and says so in a warning.
+That is deliberate: an apk signed with a throwaway key could never be
+updated by a later release. A key that is lost is an app nobody can update,
+so decide where it lives, and how it is backed up, before adding it.
+
+The apk's version is derived from `DEBDROID_VER`, so tagging needs nothing
+extra. Do not claim it rebuilds byte-identically until that has been
+measured; the zips and the image are, the apk has not been checked.
 
 ## What a release publishes
 
 | Asset | Size | For |
 | --- | --- | --- |
 | `DebDroid-module.zip` | ~4 MB | The normal path. Downloads the image on first install. |
-| `DebDroid-module-offline.zip` | ~127 MB | Installing on a device with no usable network. |
-| `debian.img.gz` | ~123 MB | What the slim module fetches, and a manual download. |
+| `DebDroid-module-offline.zip` | ~131 MB | Installing on a device with no usable network, from a root app or the app's "Use the offline installer instead". |
+| `debian.img.gz` | ~127 MB | What the slim module and the app fetch, and a manual download. |
+| `DebDroid.apk` | ~5 MB | The app, signed with the project's key. Absent when the signing secrets are not set. |
 | `SHA256SUMS` | | Verifying any of the above. |
 
 The two zips come from the same `module/build.sh`; `--with-image` is the only

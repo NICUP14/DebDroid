@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The DebDroid app: an installer and a front end for the scripts in this
+    repository.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- The image is downloaded with android's own http stack -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- The ongoing notification that keeps sessions and installs alive -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Starting at boot on a device whose root manager runs no boot scripts -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!--
+        enableOnBackInvokedCallback is off so the Back key still reaches the
+        terminal on android 13 and later, where "Back sends Esc" depends on it.
+    -->
+    <application
+        android:label="DebDroid"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:allowBackup="false"
+        android:supportsRtl="false"
+        android:enableOnBackInvokedCallback="false"
+        android:theme="@style/DebDroid">
+
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|density"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity>
+
+        <activity android:name=".ui.InstallActivity" android:exported="false"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden" />
+        <activity android:name=".ui.SettingsActivity" android:exported="false" />
+        <activity android:name=".ui.TerminalPrefsActivity" android:exported="false" />
+        <activity android:name=".ui.CommandsActivity" android:exported="false" />
+        <activity android:name=".ui.EditorActivity" android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".ui.UninstallActivity" android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".ui.TextActivity" android:exported="false" />
+
+        <service
+            android:name=".service.SessionService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps root terminal sessions and installs of a Debian environment alive while the app is in the background" />
+        </service>
+
+        <service
+            android:name=".service.EnvironmentTile"
+            android:exported="true"
+            android:label="DebDroid"
+            android:icon="@drawable/ic_stat"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".service.TerminalTile"
+            android:exported="true"
+            android:label="Terminal"
+            android:icon="@drawable/ic_terminal"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <receiver android:name=".service.BootReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

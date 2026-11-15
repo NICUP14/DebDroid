@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The app's one theme, on the ground colour, from the design canvas -->
+    <style name="DebDroid" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/ground</item>
+        <item name="android:colorBackground">@color/ground</item>
+        <item name="android:statusBarColor">@color/ground</item>
+        <item name="android:navigationBarColor">@color/bars</item>
+        <item name="android:colorAccent">@color/primary</item>
+        <item name="android:colorPrimary">@color/bars</item>
+        <item name="android:colorPrimaryDark">@color/ground</item>
+        <item name="android:textColorPrimary">@color/text</item>
+        <item name="android:textColorHint">@color/dim</item>
+        <item name="android:colorControlActivated">@color/primary</item>
+        <item name="android:textCursorDrawable">@null</item>
+    </style>
+</resources>

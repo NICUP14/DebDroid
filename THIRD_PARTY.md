@@ -55,10 +55,14 @@ are used as a cross-check on the applet table.
 
 ## Applications
 
-DebDroid no longer ships APKs. Installing an app from a repository that builds
-it from source and signs the result is a stronger guarantee than a binary
-committed to a git repository, and it removes the need for you to trust this
-project with the most sensitive app on your device.
+No third-party APKs are bundled. Installing an app from a repository that
+builds it from source and signs the result is a stronger guarantee than a
+binary committed to a git repository.
+
+DebDroid's own app is built from `app/` in this repository (MIT) and published
+as a signed release asset, never committed. It carries the same bundled
+binaries as the module, so what [Licensing](#licensing) says about their
+source covers it too.
 
 | App | Package | License | Install from |
 | --- | --- | --- | --- |

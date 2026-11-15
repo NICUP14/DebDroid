@@ -89,14 +89,30 @@ cp "$MODULE_DIR"/module.prop "$MODULE_DIR"/customize.sh "$STAGING"/
 #       been sourced rather than run. The module could not be flashed at all.
 #       KernelSU and APatch share this installer lineage and the same check.
 cp "$REPO_DIR"/install.sh "$STAGING"/debdroid-install.sh
-cp -r "$REPO_DIR"/debdroid "$REPO_DIR"/command "$REPO_DIR"/bin "$REPO_DIR"/lib \
-      "$REPO_DIR"/tests "$REPO_DIR"/boot "$STAGING"/
 
-# NOTE: The manifest carries the checksums the image is verified against. The
-#       installer needs it whenever the image is not bundled, which is exactly
-#       the case for a module built without img/.
-mkdir -p "$STAGING"/rootfs
-cp "$REPO_DIR"/rootfs/manifest "$STAGING"/rootfs/manifest
+# Stages the payload the app carries too, from the one list both read
+# NOTE: The list includes rootfs/manifest, which carries the checksums the
+#       image is verified against. The installer needs it whenever the image is
+#       not bundled, which is exactly the case for a module built without img/.
+# NOTE: Read line by line, and the staging is checked afterwards rather than
+#       inside the loop, as the loop runs in a subshell and cannot exit the
+#       script itself.
+sed -e 's/#.*//' -e 's/[[:space:]]*$//' -e '/^$/d' "$MODULE_DIR"/payload.list |
+while IFS= read -r entry; do
+    if [ ! -e "$REPO_DIR/$entry" ]; then
+        echo "Error: \"$entry\" is listed in module/payload.list but missing." >&2
+        : > "$STAGING"/.payload-missing
+        continue
+    fi
+    case "$entry" in
+        */*) mkdir -p "$STAGING/${entry%/*}" ;;
+    esac
+    cp -r "$REPO_DIR/$entry" "$STAGING/$entry"
+done
+if [ -e "$STAGING"/.payload-missing ]; then
+    rm -rf "$STAGING"
+    exit 1
+fi
 
 # The image is bundled only when it is asked for, as it is the largest piece by
 # far: it is the difference between a four megabyte zip and a 150 megabyte one
@@ -118,9 +134,6 @@ if [ "$WITH_IMAGE" = yes ]; then
 else
     echo " -> Building without the image, the installer will download it"
 fi
-
-cp "$REPO_DIR"/LICENSE "$REPO_DIR"/NOTICE "$REPO_DIR"/THIRD_PARTY.md "$STAGING"/
-cp -r "$REPO_DIR"/licenses "$STAGING"/
 
 # Gives every entry one fixed timestamp, so two builds of the same tree produce
 # the same bytes instead of differing by when they ran

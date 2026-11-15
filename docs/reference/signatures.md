@@ -2,8 +2,10 @@
 
 # Signatures
 
-DebDroid links to apps rather than bundling them. That is only an improvement
-if you can check that what you installed is what you meant to install.
+DebDroid links to third-party apps rather than bundling them, and publishes
+its own app, `DebDroid.apk`, as a signed release asset. Either way, that is
+only an improvement if you can check that what you installed is what you meant
+to install.
 
 ## What a signature proves
 
@@ -90,15 +92,22 @@ Bundled binaries, against the recorded checksums:
 sh tools/verify-provenance.sh
 ```
 
-A downloaded release:
+A downloaded release, in the folder holding its files and `SHA256SUMS`:
 
 ```sh
-sha256sum DebDroid-1.2.7.tar.gz
+sha256sum -c SHA256SUMS --ignore-missing
 ```
 
 What those checks do and do not establish is set out in
 [integrity](integrity.md), including the fact that checksums in a git
 repository are not signatures.
+
+## DebDroid's own app
+
+`apksigner verify --print-certs DebDroid.apk` prints its signer. Every release
+is signed with the same key, so Android only accepts an update signed by it.
+The apk is also listed in the release's `SHA256SUMS`. With the app you need
+none of the apps below.
 
 ## Recommended apps and their sources
 
