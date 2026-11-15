@@ -208,9 +208,13 @@ jobs:
           for entry in "0755 /usr" "0755 /usr/bin" "0755 /etc" "0700 /root" \
                   "1777 /tmp" "1777 /var/tmp" "0640 /etc/shadow" "4755 /usr/bin/su"; do
               set -- $entry
+              # NOTE: Leading zeros stripped from both sides, as debugfs pads a
+              #       mode with special bits to five digits ("01777") and the
+              #       rest to four ("0755"), so a string compare failed on the
+              #       correct modes of /tmp and su.
               mode=$(debugfs -R "stat $2" out/debian.img 2>/dev/null |
-                  sed -n 's/.*Mode: *\([0-7]*\).*/\1/p' | head -n 1)
-              if [ "$mode" != "$1" ]; then
+                  sed -n 's/.*Mode: *0*\([0-7]*\).*/\1/p' | head -n 1)
+              if [ "$mode" != "${1#0}" ]; then
                   echo "::error::$2 is $mode in the image, expected $1. Rebuild it with rootfs/build-image.sh."
                   problems=$((problems + 1))
               fi
