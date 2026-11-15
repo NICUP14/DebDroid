@@ -114,6 +114,38 @@ published release, listed here rather than left in someone's head.
       downloads the published asset, lands on exactly the manifest checksum,
       and the suite passes 73 on the result.
 
+- [ ] **`self-update` has no artifact it can install.** Both routes it offers
+      are dead ends for anyone following the help text:
+
+      - With no flags it only reports the version and says to fetch a bundle
+        and use `--offline`. There is no online update, by design for now.
+      - `--offline <bundle>` runs `tar -xzf` and then refuses anything without
+        `install.sh` at the root. **No release asset is of that shape.** The
+        two published artifacts are zips, and their installer is deliberately
+        named `debdroid-install.sh`, because a top-level `install.sh` makes a
+        root manager treat the zip as an old-style module and source it. So
+        `--offline` cannot consume the only thing a user has.
+
+      Nothing is broken that a user relies on: updating by flashing the module
+      zip works, is what `module/update.json` points at, and is what the guides
+      send people to. What is wrong is that `self-update --offline` is
+      documented in the help, in `docs/reference/cli.md` and in
+      `docs/guide/updating.md`, and cannot work.
+
+      Two ways out, and the first looks right:
+
+      - **Teach `--offline` the module zip.** Accept a zip as well as a
+        tar.gz, and look for `debdroid-install.sh` as well as `install.sh`.
+        busybox has `unzip`, so nothing new has to ship, and it makes the
+        documented command work with the asset people already download.
+      - Publish a third asset that is a plain tar.gz of the tree. That adds a
+        release artifact and a second thing to keep in step for no gain the
+        first option does not already give.
+
+      Either way the checksum question comes with it, which is the part this
+      file already records above: a bundle's checksum must not come from
+      beside the bundle.
+
 - [ ] **The session's DNS is never the device's on android 8 or later.**
       `debdroid_mgr.sh` reads the nameservers from the `net.dns1` to `net.dns4`
       properties. Android 8 removed them, so on a modern device the loop finds
