@@ -284,7 +284,7 @@ t_eq "lib overrides a stale version left in a preserved env file" \
     "$shipped_version" "$live_version"
 
 for entry in debdroid.sh debdroid_update.sh debdroid_uninstall.sh \
-    debdroid_resize.sh debdroid_swap.sh debdroid_image.sh; do
+    debdroid_resize.sh debdroid_swap.sh debdroid_image.sh debdroid_probe.sh; do
     order=$($BUSYBOX grep -n 'debdroid_env\.sh\|debdroid_lib\.sh' \
         "$REPO_ROOT"/debdroid/"$entry" |
         $BUSYBOX grep '\. ' | $BUSYBOX sed -n 's/.*\(debdroid_[a-z]*\)\.sh.*/\1/p' |

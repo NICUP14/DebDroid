@@ -69,6 +69,10 @@ Options:
   status
       Reports whether an environment is running.
 
+  probe
+      Prints the installation's state as key=value lines, for programs.
+      The format is stable, unlike the wording of 'status'.
+
   list
       Lists all command scripts in the command directory.
 
@@ -109,6 +113,13 @@ elif [ "$DEBDROID_OPT" = "start" ] || [ "$DEBDROID_OPT" = "stop" ] ||
     export DEBDROIDMGR_MODE
     shift
     debdroid_run "$@"
+
+# Handles the "probe" option
+# NOTE: Not a manager mode. The probe has to run where nothing is installed yet,
+#       and the manager refuses to start without root and a built architecture,
+#       which are among the facts the probe exists to report.
+elif [ "$DEBDROID_OPT" = "probe" ]; then
+    sh "$DEBDROID_SDHOME"/debdroid_probe.sh
 
 # Handles the "list" option
 elif [ "$DEBDROID_OPT" = "list" ]; then

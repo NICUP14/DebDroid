@@ -56,6 +56,12 @@ everything, releases the lock, the wakelock and the swapfile.
 Reports whether an environment is running, its process and mount counts, and
 whether the wakelock and swap are active.
 
+### `probe`
+
+Prints the same facts, and what is installed, as `key=value` lines for
+programs. Unlike the wording of `status`, the format is a contract. See
+[the probe](probe.md).
+
 ## Commands and scripts
 
 ### `list`

@@ -164,7 +164,7 @@ safe_remove "$DEBDROID_HOME" || exit 1
 #       keep cannot be caught by a pattern.
 for name in debdroid.sh debdroid_mgr.sh debdroid_resize.sh debdroid_ui.sh \
     debdroid_lib.sh debdroid_uninstall.sh debdroid_update.sh \
-    debdroid_swap.sh debdroid_image.sh; do
+    debdroid_swap.sh debdroid_image.sh debdroid_probe.sh; do
     [ -e "$DEBDROID_SDHOME/$name" ] && $BUSYBOX rm -f "$DEBDROID_SDHOME/$name"
 done
 step "Removed the scripts in $DEBDROID_SDHOME"

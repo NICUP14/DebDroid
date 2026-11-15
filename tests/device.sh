@@ -282,7 +282,7 @@ t_section "Required busybox applets"
 #       instead, through get_prop.
 missing=
 for applet in awk cut tac seq kill sleep readlink mountpoint mount umount \
-    chroot unshare flock sysctl hostname printf id stat truncate du df; do
+    chroot unshare flock sysctl hostname printf id stat truncate du df dd od; do
     $BUSYBOX --list | $BUSYBOX grep -qx "$applet" || missing="$missing $applet"
 done
 if [ -z "$missing" ]; then
@@ -293,7 +293,7 @@ fi
 
 # Applets later features need, absent is not a failure today
 missing=
-for applet in nsenter setsid start-stop-daemon mkswap swapon swapoff dd \
+for applet in nsenter setsid start-stop-daemon mkswap swapon swapoff \
     sha256sum wget tar mke2fs tune2fs fuser lsof losetup; do
     $BUSYBOX --list | $BUSYBOX grep -qx "$applet" || missing="$missing $applet"
 done
@@ -383,7 +383,7 @@ sh "$DEBDROID_SDHOME"/debdroid.sh run \
 session_status=$?
 
 # Reads a value the probe reported, or an empty string when it is absent
-probe()
+inside_value()
 {
     $BUSYBOX sed -n "s/^DEVTEST:$1=//p" "$session_log" | $BUSYBOX head -n 1
 }
@@ -396,7 +396,7 @@ else
         "$($BUSYBOX tail -n 20 "$session_log")"
 fi
 
-if [ -n "$(probe ready)" ]; then
+if [ -n "$(inside_value ready)" ]; then
     t_ok "the probe ran inside the session"
 else
     t_no "the probe ran inside the session" \
@@ -406,44 +406,44 @@ else
     exit $?
 fi
 
-t_eq "the session umask is 0022" "0022" "$(probe umask)"
-t_eq "the root filesystem is the image" "yes" "$(probe rootfs)"
-t_info "debian release" "$(probe debian)"
+t_eq "the session umask is 0022" "0022" "$(inside_value umask)"
+t_eq "the root filesystem is the image" "yes" "$(inside_value rootfs)"
+t_info "debian release" "$(inside_value debian)"
 
 # The first three are mounted with mount_required, so a missing one is a failure
-t_eq "/proc is mounted"    "yes" "$(probe mount_proc)"
-t_eq "/dev is mounted"     "yes" "$(probe mount_dev)"
-t_eq "/dev/pts is mounted" "yes" "$(probe mount_devpts)"
+t_eq "/proc is mounted"    "yes" "$(inside_value mount_proc)"
+t_eq "/dev is mounted"     "yes" "$(inside_value mount_dev)"
+t_eq "/dev/pts is mounted" "yes" "$(inside_value mount_devpts)"
 
 # These use mount_optional, so the environment still runs without them
 for optional in tmp sys sdcard; do
-    if [ "$(probe "mount_$optional")" = "yes" ]; then
+    if [ "$(inside_value "mount_$optional")" = "yes" ]; then
         t_ok "/$optional is mounted"
     else
         t_skip "/$optional is mounted" "Mounted with mount_optional, so this is not fatal."
     fi
 done
 
-t_info "/dev backing" "$(probe dev_type)"
-t_info "/dev options" "$(probe dev_options)"
-t_eq "the expected /dev nodes exist" "complete" "$(probe dev_nodes)"
-t_eq "the bundled binaries are visible" "yes" "$(probe debdroid_bin)"
-t_eq "the preload libraries are registered" "yes" "$(probe preload)"
-t_info "preloaded" "$(probe preload_libs)"
-t_eq "every preloaded library is readable" "yes" "$(probe preload_readable)"
-t_eq "a nameserver is configured" "yes" "$(probe resolv)"
-t_info "nameservers" "$(probe nameservers)"
-t_eq "the hosts file is populated" "yes" "$(probe hosts)"
-t_eq "the inet group exists" "yes" "$(probe inet)"
-t_eq "apt belongs to the inet group" "yes" "$(probe apt_inet)"
-t_info "kernel.shmmax" "$(probe shmmax)"
+t_info "/dev backing" "$(inside_value dev_type)"
+t_info "/dev options" "$(inside_value dev_options)"
+t_eq "the expected /dev nodes exist" "complete" "$(inside_value dev_nodes)"
+t_eq "the bundled binaries are visible" "yes" "$(inside_value debdroid_bin)"
+t_eq "the preload libraries are registered" "yes" "$(inside_value preload)"
+t_info "preloaded" "$(inside_value preload_libs)"
+t_eq "every preloaded library is readable" "yes" "$(inside_value preload_readable)"
+t_eq "a nameserver is configured" "yes" "$(inside_value resolv)"
+t_info "nameservers" "$(inside_value nameservers)"
+t_eq "the hosts file is populated" "yes" "$(inside_value hosts)"
+t_eq "the inet group exists" "yes" "$(inside_value inet)"
+t_eq "apt belongs to the inet group" "yes" "$(inside_value apt_inet)"
+t_info "kernel.shmmax" "$(inside_value shmmax)"
 
 # The command crosses three hops before the chroot runs it, so prove that
 # quotes, spaces, globs and variables all arrive untouched
 t_eq "arguments survive the chroot intact" \
-    "a b|it's|\$HOME|*|" "$(probe quoting)"
+    "a b|it's|\$HOME|*|" "$(inside_value quoting)"
 
-t_eq "the probe ran to completion" "yes" "$(probe complete)"
+t_eq "the probe ran to completion" "yes" "$(inside_value complete)"
 
 t_section "Session cleanup"
 

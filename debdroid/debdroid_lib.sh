@@ -184,6 +184,61 @@ read_supervisor()
     [ "$current_mnt" = "$supervisor_mnt" ]
 }
 
+# Reads what an environment is doing, without changing anything
+# Usage: environment_state <mount-point>
+# Sets "state_session" to background, foreground or none, "state_pid",
+# "state_mounts" and "state_processes" (empty unless a background environment
+# runs), "state_wakelock" to held, not_held or unavailable, and "state_swap" to
+# on or off
+# NOTE: Shared by "debdroid.sh status", which renders it as prose, and by the
+#       probe, which prints it as key=value lines. Keeping one reading of the
+#       state is what stops the two from disagreeing about it.
+# NOTE: The lock is only tested when it exists. Opening it creates it, and its
+#       directory may not exist at all on a device with nothing installed, in
+#       which case the failed redirection read as a session holding the lock.
+# shellcheck disable=SC2034
+environment_state()
+{
+    state_session=none
+    state_pid=
+    state_mounts=
+    state_processes=
+    state_wakelock=unavailable
+    state_swap=off
+
+    if read_supervisor "$1".pid; then
+        state_session=background
+        state_pid=$supervisor_pid
+
+        state_mounts=$($BUSYBOX awk -v env="$1" \
+            '$2 == env || index($2, env "/") == 1' /proc/"$supervisor_pid"/mounts |
+            $BUSYBOX wc -l)
+        state_mounts=$(echo "$state_mounts" | $BUSYBOX tr -d ' ')
+
+        # Counts the processes sharing the supervisor's namespace
+        state_processes=0
+        for proc in /proc/[0-9]*; do
+            [ "$proc"/ns/mnt -ef /proc/"$supervisor_pid"/ns/mnt ] &&
+                state_processes=$((state_processes + 1))
+        done
+    elif [ -e "$1".lock ] && ! ( $BUSYBOX flock -n 9 ) 9> "$1".lock 2> /dev/null; then
+        state_session=foreground
+    fi
+
+    if [ -r /sys/power/wake_lock ]; then
+        if $BUSYBOX grep -qw "${DEBDROID_WAKELOCK:-debdroid}" /sys/power/wake_lock 2>/dev/null; then
+            state_wakelock=held
+        else
+            state_wakelock=not_held
+        fi
+    fi
+
+    if [ -n "$DEBDROID_SWAP" ] && [ -f /proc/swaps ] &&
+            $BUSYBOX grep -q "^$DEBDROID_SWAP " /proc/swaps 2>/dev/null; then
+        state_swap=on
+    fi
+}
+
 # Quotes the arguments into a single string that survives one shell evaluation
 # Sets "DEBDROID_QUOTED" to the quoted string, empty when given no arguments
 # NOTE: Single quotes protect every character except a single quote itself, which

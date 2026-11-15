@@ -90,7 +90,7 @@ construction. Details in [architecture](reference/architecture.md#why-ext2).
 
 **Using it:** [every command](reference/cli.md) ·
 [configuration](reference/configuration.md) ·
-[output conventions](reference/output.md)
+[output conventions](reference/output.md) · [the probe](reference/probe.md)
 
 **Trust:** [security](reference/security.md) ·
 [integrity](reference/integrity.md) · [signatures](reference/signatures.md)

@@ -621,45 +621,42 @@ stop_background()
 }
 
 # Reports whether an environment is running and what state it is in
+# shellcheck disable=SC2154
+# state_* are set by environment_state, which lives in debdroid_lib.sh.
 report_status()
 {
     section "DebDroid status"
 
-    if read_supervisor "$DEBDROIDMGR_PID"; then
-        step "Background environment: running (pid $supervisor_pid)"
-        step "Log file: $DEBDROIDMGR_LOG"
+    # NOTE: The reading lives in environment_state, which the probe shares, so
+    #       this function only decides how to word it.
+    environment_state "$DEBDROIDMGR_ENV"
 
-        mounts=$($BUSYBOX awk -v env="$DEBDROIDMGR_ENV" \
-            '$2 == env || index($2, env "/") == 1' /proc/"$supervisor_pid"/mounts |
-            $BUSYBOX wc -l)
-        step "Mounted filesystems: $mounts"
-    elif ( $BUSYBOX flock -n 9 ) 9> "$DEBDROIDMGR_LOCK" 2> /dev/null; then
-        step "Background environment: stopped"
-        step "No session is using the debian image"
-        return 0
-    else
-        step "Background environment: stopped"
-        step "A foreground session is using the debian image"
-        return 0
+    case "$state_session" in
+        none)
+            step "Background environment: stopped"
+            step "No session is using the debian image"
+            return 0
+            ;;
+        foreground)
+            step "Background environment: stopped"
+            step "A foreground session is using the debian image"
+            return 0
+            ;;
+    esac
+
+    step "Background environment: running (pid $state_pid)"
+    step "Log file: $DEBDROIDMGR_LOG"
+    step "Mounted filesystems: $state_mounts"
+    step "Processes in the environment: $state_processes"
+
+    if [ "$CONFIG_ENV_WAKELOCK" = "yes" ]; then
+        case "$state_wakelock" in
+            held)     step "Wakelock: held" ;;
+            not_held) step "Wakelock: not held" ;;
+        esac
     fi
 
-    # Counts the processes sharing the supervisor's namespace
-    processes=0
-    for proc in /proc/[0-9]*; do
-        [ "$proc"/ns/mnt -ef /proc/"$supervisor_pid"/ns/mnt ] &&
-            processes=$((processes + 1))
-    done
-    step "Processes in the environment: $processes"
-
-    if [ "$CONFIG_ENV_WAKELOCK" = "yes" ] && [ -r /sys/power/wake_lock ]; then
-        if $BUSYBOX grep -qw "$DEBDROID_WAKELOCK" /sys/power/wake_lock 2>/dev/null; then
-            step "Wakelock: held"
-        else
-            step "Wakelock: not held"
-        fi
-    fi
-
-    if [ -f /proc/swaps ] && $BUSYBOX grep -q "^$DEBDROID_SWAP " /proc/swaps 2>/dev/null; then
+    if [ "$state_swap" = "on" ]; then
         step "Swap: enabled"
     fi
 }
